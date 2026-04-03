@@ -1,0 +1,52 @@
+{
+  "groups": {
+    "120363426431851023@g.us": {
+      "antilink": false,
+      "welcome": true,
+      "welcomeText": "hola @user, bienvenido a @group",
+      "muted": false,
+      "antiFlood": false,
+      "byeText": "adios @user, saliste de @group"
+    }
+  },
+  "bot": {
+    "public": true
+  },
+  "antiFlood": {},
+  "warnings": {
+    "120363426431851023@g.us": {
+      "16622311973103@lid": 0
+    }
+  },
+  "bans": {
+    "120363426431851023@g.us": {}
+  },
+  "afk": {},
+  "users": {
+    "50320424083668@lid": {
+      "coins": 830,
+      "bank": 0,
+      "xp": 156,
+      "level": 2,
+      "lastDaily": 1775179000080,
+      "lastWork": 1775179018669,
+      "lastRob": 1775179131202
+    },
+    "16622311973103@lid": {
+      "coins": 1,
+      "bank": 0,
+      "xp": 0,
+      "level": 1,
+      "lastDaily": 0,
+      "lastWork": 0,
+      "lastRob": 0
+    }
+  },
+  "marriages": {},
+  "proposals": {
+    "16622311973103@lid": {
+      "from": "50320424083668@lid",
+      "expiresAt": 1775180443983
+    }
+  }
+}

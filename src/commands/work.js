@@ -1,0 +1,54 @@
+import { ensureUser, saveDB } from '../store.js'
+import { AstraText } from '../astramessages.js'
+
+const jobs = [
+  'mecánico orbital',
+  'piloto de cometas',
+  'minero lunar',
+  'ingeniero astral',
+  'cartógrafo galáctico',
+  'vigilante estelar'
+]
+
+function formatTime(ms) {
+  const s = Math.ceil(ms / 1000)
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  const parts = []
+  if (h) parts.push(`${h}h`)
+  if (m) parts.push(`${m}m`)
+  if (sec || !parts.length) parts.push(`${sec}s`)
+  return parts.join(' ')
+}
+
+export default {
+  name: 'work',
+  aliases: ['trabajar'],
+  description: 'Trabaja y gana coins',
+  category: 'fun',
+  cooldown: 3,
+  async run({ sock, from, sender, db }) {
+    const user = ensureUser(db, sender)
+    const now = Date.now()
+    const cd = 60 * 60 * 1000
+    const left = user.lastWork + cd - now
+
+    if (left > 0) {
+      return sock.sendMessage(from, {
+        text: AstraText.cooldownCustom('work', formatTime(left))
+      })
+    }
+
+    const amount = Math.floor(Math.random() * 201) + 80
+    const job = jobs[Math.floor(Math.random() * jobs.length)]
+
+    user.coins += amount
+    user.lastWork = now
+    saveDB(db)
+
+    await sock.sendMessage(from, {
+      text: AstraText.workDone(amount, job)
+    })
+  }
+}
