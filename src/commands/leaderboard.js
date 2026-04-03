@@ -1,0 +1,48 @@
+import { ensureUser } from '../store.js'
+
+export default {
+  name: 'leaderboard',
+  aliases: ['top', 'lb'],
+  description: 'Muestra el top galáctico de riqueza y nivel',
+  category: 'fun',
+  cooldown: 5,
+  async run({ sock, from, db }) {
+    const users = Object.keys(db.users || {})
+
+    if (!users.length) {
+      return sock.sendMessage(from, {
+        text: '🌌 Aún no hay datos suficientes en la galaxia para formar un leaderboard.'
+      })
+    }
+
+    const ranking = users
+      .map(jid => {
+        const user = ensureUser(db, jid)
+        return {
+          jid,
+          level: user.level || 1,
+          xp: user.xp || 0,
+          total: (user.coins || 0) + (user.bank || 0)
+        }
+      })
+      .sort((a, b) => {
+        if (b.total !== a.total) return b.total - a.total
+        if (b.level !== a.level) return b.level - a.level
+        return b.xp - a.xp
+      })
+      .slice(0, 10)
+
+    const lines = [
+      '🏆 *LEADERBOARD GALÁCTICO*',
+      '',
+      ...ranking.map((user, i) =>
+        `${i + 1}. @${user.jid.split('@')[0]} — 🪙 *${user.total}* | 💠 *Lvl ${user.level}*`
+      )
+    ]
+
+    await sock.sendMessage(from, {
+      text: lines.join('\n'),
+      mentions: ranking.map(v => v.jid)
+    })
+  }
+}

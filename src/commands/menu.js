@@ -1,12 +1,31 @@
-import { AstraText } from '../astramessages.js'
-
 export default {
   name: 'menu',
-  aliases: ['help'],
-  description: 'Despliega el núcleo de comandos',
+  aliases: ['help', 'menú'],
+  description: 'Despliega el núcleo de comandos astrales',
   category: 'main',
   cooldown: 3,
   async run({ sock, from, commands, config }) {
+    const categoryOrder = [
+      'main',
+      'info',
+      'group',
+      'moderation',
+      'media',
+      'fun',
+      'owner'
+    ]
+
+    const categoryMeta = {
+      main: { emoji: '🚀', title: 'NÚCLEO PRINCIPAL' },
+      info: { emoji: '🛰️', title: 'INFORMACIÓN ASTRAL' },
+      group: { emoji: '🌌', title: 'GESTIÓN DE ÓRBITA' },
+      moderation: { emoji: '🛡️', title: 'MODERACIÓN ESTELAR' },
+      media: { emoji: '🪐', title: 'MEDIA & RELIQUIAS' },
+      fun: { emoji: '🎮', title: 'DIVERSIÓN GALÁCTICA' },
+      owner: { emoji: '👑', title: 'NÚCLEO DE MANDO' },
+      otros: { emoji: '✨', title: 'OTROS MÓDULOS' }
+    }
+
     const grouped = {}
 
     for (const cmd of commands) {
@@ -15,24 +34,51 @@ export default {
       grouped[cat].push(cmd)
     }
 
-    const lines = AstraText.menuHeader(config.botName, config.prefix, commands.length)
+    const sortedCategories = [
+      ...categoryOrder.filter(cat => grouped[cat]),
+      ...Object.keys(grouped).filter(cat => !categoryOrder.includes(cat))
+    ]
 
-    for (const [cat, cmds] of Object.entries(grouped)) {
-      lines.push(`▢ ${cat.toUpperCase()}`)
+    const lines = [
+      '╔════════════════════╗',
+      '║      ✦ ASTRA BOT ✦      ║',
+      '╚════════════════════╝',
+      '',
+      `🌠 *Bot:* ${config.botName}`,
+      `🧭 *Prefijo:* ${config.prefix}`,
+      `📦 *Módulos cargados:* ${commands.length}`,
+      '🛰️ *Estado:* señal astral estable',
+      '',
+      '━━━━━━━━━━━━━━━━━━'
+    ]
+
+    for (const cat of sortedCategories) {
+      const meta = categoryMeta[cat] || categoryMeta.otros
+      lines.push('')
+      lines.push(`${meta.emoji} *${meta.title}*`)
+      lines.push('──────────────────')
+
+      const cmds = grouped[cat].sort((a, b) => a.name.localeCompare(b.name))
+
       for (const c of cmds) {
         const flags = [
-          c.ownerOnly ? 'owner' : null,
-          c.adminOnly ? 'admin' : null,
-          c.groupOnly ? 'group' : null,
-          c.privateOnly ? 'private' : null
-        ].filter(Boolean)
+          c.ownerOnly ? '👑' : null,
+          c.adminOnly ? '🛡️' : null,
+          c.groupOnly ? '👥' : null,
+          c.privateOnly ? '📩' : null
+        ].filter(Boolean).join(' ')
 
-        const extra = flags.length ? ` [${flags.join(', ')}]` : ''
-        lines.push(`• ${config.prefix}${c.name} — ${c.description || 'sin descripción'}${extra}`)
+        const flagText = flags ? ` ${flags}` : ''
+        lines.push(`✧ *${config.prefix}${c.name}* — ${c.description || 'sin descripción'}${flagText}`)
       }
-      lines.push('')
     }
 
-    await sock.sendMessage(from, { text: lines.join('\n') })
+    lines.push('')
+    lines.push('━━━━━━━━━━━━━━━━━━')
+    lines.push('🌙 *AstraBot domina la órbita.*')
+
+    await sock.sendMessage(from, {
+      text: lines.join('\n')
+    })
   }
 }
