@@ -107,8 +107,9 @@ export async function handleMessage({ sock, msg, commands, db }) {
 
   const chatIsGroup = isGroup(from)
   const userIsAdmin = chatIsGroup ? await isAdmin(sock, from, sender) : false
+  const senderUser = ensureUser(db, sender)
 
-  if (body && !body.startsWith(config.prefix)) {
+  if (body && !body.startsWith(config.prefix) && (senderUser.registered || userIsOwner)) {
     addXp(db, sender, 4)
     saveDB(db)
   }
@@ -217,6 +218,16 @@ export async function handleMessage({ sock, msg, commands, db }) {
   const command = commands.find(c => c.name === commandName || c.aliases?.includes(commandName))
   if (!command) return
 
+  const noRegisterNeeded = ['register', 'unregister']
+  if (!senderUser.registered && !userIsOwner && !noRegisterNeeded.includes(command.name)) {
+    return sock.sendMessage(from, {
+      text:
+        '🌌 *ACCESO RESTRINGIDO*\n\n' +
+        'Para usar AstraBot debes registrarte primero.\n' +
+        'Usa: *.register TuNombre*'
+    }, { quoted: msg })
+  }
+
   if (command.ownerOnly && !userIsOwner) {
     return sock.sendMessage(from, { text: AstraText.ownerOnly })
   }
@@ -239,8 +250,11 @@ export async function handleMessage({ sock, msg, commands, db }) {
   }
 
   try {
-    const xpResult = addXp(db, sender, 8)
-    saveDB(db)
+    let xpResult = null
+    if (senderUser.registered || userIsOwner) {
+      xpResult = addXp(db, sender, 8)
+      saveDB(db)
+    }
 
     await command.run({
       sock,
@@ -257,7 +271,7 @@ export async function handleMessage({ sock, msg, commands, db }) {
       isGroup: chatIsGroup
     })
 
-    if (xpResult.leveledUp) {
+    if (xpResult?.leveledUp) {
       await sock.sendMessage(from, {
         text: `🌠 Ascendiste de nivel. Ahora estás en *nivel ${xpResult.user.level}* y recibiste *50* coins astrales.`
       }, { quoted: msg })
