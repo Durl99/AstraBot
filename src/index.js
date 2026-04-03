@@ -16,7 +16,7 @@ const logger = pino({ level: 'silent' })
 const pairingNumber = (process.env.PAIRING_NUMBER || '').replace(/[^0-9]/g, '')
 
 const startBot = async () => {
-  const { state, saveCreds } = await useMultiFileAuthState('./src/sessions')
+const { state, saveCreds } = await useMultiFileAuthState('/workspace/src/sessions')
   const { version } = await fetchLatestBaileysVersion()
 
   const sock = makeWASocket({
