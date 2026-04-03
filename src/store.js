@@ -90,7 +90,8 @@ export function ensureUser(db, userId) {
       level: 1,
       lastDaily: 0,
       lastWork: 0,
-      lastRob: 0
+      lastRob: 0,
+      inventory: {}
     }
   }
 
@@ -103,6 +104,7 @@ export function ensureUser(db, userId) {
   if (typeof user.lastDaily !== 'number') user.lastDaily = 0
   if (typeof user.lastWork !== 'number') user.lastWork = 0
   if (typeof user.lastRob !== 'number') user.lastRob = 0
+  if (!user.inventory || typeof user.inventory !== 'object') user.inventory = {}
 
   return user
 }

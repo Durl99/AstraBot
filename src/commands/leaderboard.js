@@ -22,6 +22,8 @@ export default {
           jid,
           level: user.level || 1,
           xp: user.xp || 0,
+          coins: user.coins || 0,
+          bank: user.bank || 0,
           total: (user.coins || 0) + (user.bank || 0)
         }
       })
@@ -36,12 +38,12 @@ export default {
       '🏆 *LEADERBOARD GALÁCTICO*',
       '',
       ...ranking.map((user, i) =>
-        `${i + 1}. @${user.jid.split('@')[0]} — 🪙 *${user.total}* | 💠 *Lvl ${user.level}*`
+        `${i + 1}. @${user.jid.split('@')[0]}\n🪙 Total: *${user.total}* | 💠 Nivel: *${user.level}*`
       )
     ]
 
     await sock.sendMessage(from, {
-      text: lines.join('\n'),
+      text: lines.join('\n\n'),
       mentions: ranking.map(v => v.jid)
     })
   }
