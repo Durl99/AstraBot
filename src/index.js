@@ -1,5 +1,4 @@
 import makeWASocket, {
-  Browsers,
   DisconnectReason,
   useMultiFileAuthState,
   downloadMediaMessage
@@ -22,16 +21,13 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     logger,
-    printQRInTerminal: false,
-    browser: Browsers.macOS('Google Chrome'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
+    printQRInTerminal: false,
     connectTimeoutMs: 60000,
     keepAliveIntervalMs: 30000,
     defaultQueryTimeoutMs: 60000
   })
-
-  let pairingRequested = false
 
   sock.downloadMediaMessage = async (msg) => {
     return downloadMediaMessage(msg, 'buffer', {}, {
@@ -42,45 +38,16 @@ async function startBot() {
 
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update
-
+  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
     if (connection === 'connecting') {
       console.log('🛰️ AstraBot está iniciando conexión...')
     }
 
-    // IMPORTANTE:
-    // pairing SOLO cuando exista qr y solo una vez
-    if (!sock.authState.creds.registered && !!qr && !pairingRequested) {
-      pairingRequested = true
-
-      const phoneNumber = (
-        process.env.BOT_PHONE_NUMBER ||
-        process.env.OWNER_NUMBER ||
-        ''
-      ).replace(/[^0-9]/g, '')
-
-      if (!phoneNumber) {
-        console.log('⚠️ No hay BOT_PHONE_NUMBER ni OWNER_NUMBER configurado.')
-      } else {
-        try {
-          console.log('📷 QR detectado. Preparando pairing code...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-
-          const code = await sock.requestPairingCode(phoneNumber)
-          const prettyCode = code?.match(/.{1,4}/g)?.join('-') || code
-
-          console.log(`🔑 Código de emparejamiento: ${prettyCode}`)
-          console.log('📱 WhatsApp > Dispositivos vinculados > Vincular con número')
-        } catch (e) {
-          console.error('❌ No pude generar el pairing code:', e)
-          pairingRequested = false
-        }
-      }
-
+    if (qr) {
+      console.log('📷 Escanea este QR para vincular AstraBot:')
       try {
         qrcode.generate(qr, { small: true })
-      } catch {
+      } catch (e) {
         console.log('No pude renderizar el QR en consola.')
       }
     }
@@ -92,13 +59,10 @@ async function startBot() {
     if (connection === 'close') {
       const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut
-
       console.log('Conexión cerrada:', statusCode, 'Reconectar:', shouldReconnect)
 
       if (shouldReconnect) {
         startBot()
-      } else {
-        console.log('⚠️ Sesión cerrada. Si no alcanzaste a vincular, redeploy para pedir un nuevo código.')
       }
     }
   })
