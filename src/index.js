@@ -15,8 +15,8 @@ const logger = pino({ level: 'silent' })
 const db = loadDB()
 
 async function startBot() {
-const sessionPath = process.env.SESSION_PATH || './src/sessions'
-const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
+  const sessionPath = process.env.SESSION_PATH || './src/sessions'
+  const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
   const { version } = await fetchLatestBaileysVersion()
   const commands = await loadCommands()
 
@@ -26,7 +26,8 @@ const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
     logger,
     browser: [config.botName, 'Chrome', '1.0.0'],
     syncFullHistory: false,
-    markOnlineOnConnect: false
+    markOnlineOnConnect: false,
+    printQRInTerminal: false
   })
 
   sock.downloadMediaMessage = async (msg) => {
@@ -38,10 +39,14 @@ const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
 
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
+  sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
-      console.log('Escanea este QR para vincular AstraBot:')
-      qrcode.generate(qr, { small: true })
+      console.log('📷 QR detectado, pero en hosting se recomienda usar pairing code.')
+      try {
+        qrcode.generate(qr, { small: true })
+      } catch (e) {
+        console.log('No pude renderizar el QR en consola.')
+      }
     }
 
     if (connection === 'open') {
@@ -52,9 +57,29 @@ const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
       const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut
       console.log('Conexión cerrada:', statusCode, 'Reconectar:', shouldReconnect)
-      if (shouldReconnect) startBot()
+
+      if (shouldReconnect) {
+        startBot()
+      }
     }
   })
+
+  // Pairing code solo si aún no está registrada la sesión
+  if (!sock.authState.creds.registered) {
+    const phoneNumber = (process.env.OWNER_NUMBER || '').replace(/[^0-9]/g, '')
+
+    if (!phoneNumber) {
+      console.log('⚠️ No hay OWNER_NUMBER configurado para generar pairing code.')
+    } else {
+      try {
+        console.log('📡 Generando código de emparejamiento...')
+        const code = await sock.requestPairingCode(phoneNumber)
+        console.log(`🔑 Código de emparejamiento: ${code}`)
+      } catch (e) {
+        console.error('❌ No pude generar el pairing code:', e)
+      }
+    }
+  }
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return
