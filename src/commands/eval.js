@@ -1,5 +1,4 @@
 import util from 'util'
-import { AstraText } from '../astramessages.js'
 
 export default {
   name: 'eval',
@@ -11,23 +10,30 @@ export default {
   async run({ sock, from, args, msg, db, config }) {
     const code = args.join(' ')
     if (!code) {
-      return sock.sendMessage(from, { text: AstraText.noCode })
+      return sock.sendMessage(from, { text: '⚠️ Ingresa código.' })
     }
 
     try {
-      let result = await eval(`(async () => { ${code} })()`)
+      let result
+
+      if (code.includes(';') || code.includes('return ') || code.includes('\n')) {
+        result = await eval(`(async () => { ${code} })()`)
+      } else {
+        result = await eval(code)
+      }
+
       if (typeof result !== 'string') {
-        result = util.inspect(result, { depth: 1 })
+        result = util.inspect(result, { depth: 2 })
       }
 
       if (!result) result = 'undefined'
 
       await sock.sendMessage(from, {
-        text: AstraText.evalResult(String(result).slice(0, 3500))
+        text: `🌌 *ASTRA EVAL*\n\n${String(result).slice(0, 3500)}`
       }, { quoted: msg })
     } catch (e) {
       await sock.sendMessage(from, {
-        text: AstraText.evalResult(String(e).slice(0, 3500))
+        text: `💥 ERROR\n\n${String(e).slice(0, 3500)}`
       }, { quoted: msg })
     }
   }
