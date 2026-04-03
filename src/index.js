@@ -7,16 +7,35 @@ import makeWASocket, {
 import pino from 'pino'
 import qrcode from 'qrcode-terminal'
 import { Boom } from '@hapi/boom'
+import express from 'express'
 
 import { loadCommands, handleMessage } from './handler.js'
 import { loadDB, saveDB } from './store.js'
 
 const logger = pino({ level: 'silent' })
 
-const pairingNumber = (process.env.PAIRING_NUMBER || '').replace(/[^0-9]/g, '')
+const app = express()
+const PORT = process.env.PORT || 3000
+
+app.get('/', (req, res) => {
+  res.status(200).send('AstraBot online 🚀')
+})
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    bot: 'AstraBot',
+    uptime: process.uptime()
+  })
+})
+
+app.listen(PORT, () => {
+  console.log(`🌐 HTTP server activo en puerto ${PORT}`)
+})
 
 const startBot = async () => {
-const { state, saveCreds } = await useMultiFileAuthState('/workspace/src/sessions')
+  const sessionPath = './src/sessions'
+  const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
   const { version } = await fetchLatestBaileysVersion()
 
   const sock = makeWASocket({
@@ -32,42 +51,28 @@ const { state, saveCreds } = await useMultiFileAuthState('/workspace/src/session
 
   sock.ev.on('creds.update', saveCreds)
 
-  let pairingCodeRequested = false
-
-  sock.ev.on('connection.update', async (update) => {
+  sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update
 
-    try {
-      const notRegistered =
-        !!pairingNumber &&
-        !sock.authState?.creds?.registered &&
-        !pairingCodeRequested
-
-      if (notRegistered) {
-        pairingCodeRequested = true
-        const code = await sock.requestPairingCode(pairingNumber)
-        console.log(`🔑 Pairing code AstraBot: ${code}`)
-        console.log('📱 En tu WhatsApp ve a Dispositivos vinculados > Vincular con número de teléfono')
-      } else if (qr && !pairingNumber) {
-        console.log('\n📱 Escanea este QR:\n')
-        qrcode.generate(qr, { small: true })
-      }
-    } catch (err) {
-      console.error('Error solicitando pairing code:', err)
+    if (qr) {
+      console.log('\n📱 Escanea este QR:\n')
+      qrcode.generate(qr, { small: true })
     }
 
     if (connection === 'close') {
-      const shouldReconnect =
-        (lastDisconnect?.error instanceof Boom
-          ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
-          : true)
+      const statusCode =
+        lastDisconnect?.error instanceof Boom
+          ? lastDisconnect.error.output.statusCode
+          : undefined
 
-      console.log('❌ Conexión cerrada. Reintentando...', shouldReconnect)
+      const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+
+      console.log('❌ Conexión cerrada. Código:', statusCode, 'Reconectar:', shouldReconnect)
 
       if (shouldReconnect) {
         startBot()
       } else {
-        console.log('🚫 Sesión cerrada. Borra sessions y vuelve a vincular.')
+        console.log('🚫 Sesión cerrada. Borra src/sessions y vuelve a vincular.')
       }
     }
 
@@ -80,8 +85,8 @@ const { state, saveCreds } = await useMultiFileAuthState('/workspace/src/session
     if (type !== 'notify') return
 
     const msg = messages[0]
-    if (!msg.message) return
-    if (msg.key && msg.key.remoteJid === 'status@broadcast') return
+    if (!msg?.message) return
+    if (msg.key?.remoteJid === 'status@broadcast') return
 
     try {
       await handleMessage({
