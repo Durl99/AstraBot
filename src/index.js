@@ -30,6 +30,8 @@ async function startBot() {
     printQRInTerminal: false
   })
 
+  let pairingRequested = false
+
   sock.downloadMediaMessage = async (msg) => {
     return downloadMediaMessage(msg, 'buffer', {}, {
       logger,
@@ -41,45 +43,63 @@ async function startBot() {
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
-      console.log('📷 QR detectado, pero en hosting se recomienda usar pairing code.')
+      console.log('📷 QR detectado, pero en hosting usaremos pairing code.')
       try {
         qrcode.generate(qr, { small: true })
-      } catch (e) {
+      } catch {
         console.log('No pude renderizar el QR en consola.')
       }
+    }
+
+    if (connection === 'connecting') {
+      console.log('🛰️ AstraBot está iniciando conexión...')
     }
 
     if (connection === 'open') {
       console.log(`✅ ${config.botName} conectado`)
     }
 
+    // Pedir pairing code SOLO una vez y solo cuando aún no hay sesión registrada
+    if (!sock.authState.creds.registered && !pairingRequested) {
+      pairingRequested = true
+
+      const phoneNumber = (
+        process.env.BOT_PHONE_NUMBER ||
+        process.env.OWNER_NUMBER ||
+        ''
+      ).replace(/[^0-9]/g, '')
+
+      if (!phoneNumber) {
+        console.log('⚠️ No hay BOT_PHONE_NUMBER ni OWNER_NUMBER configurado para generar pairing code.')
+      } else {
+        try {
+          // Espera breve para que el socket termine de inicializar
+          await new Promise(resolve => setTimeout(resolve, 5000))
+
+          console.log('📡 Generando código de emparejamiento...')
+          const code = await sock.requestPairingCode(phoneNumber)
+          console.log(`🔑 Código de emparejamiento: ${code}`)
+          console.log('📱 Usa ese código en WhatsApp > Dispositivos vinculados > Vincular con número')
+        } catch (e) {
+          console.error('❌ No pude generar el pairing code:', e)
+          pairingRequested = false
+        }
+      }
+    }
+
     if (connection === 'close') {
       const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+
       console.log('Conexión cerrada:', statusCode, 'Reconectar:', shouldReconnect)
 
       if (shouldReconnect) {
         startBot()
+      } else {
+        console.log('⚠️ La sesión quedó cerrada. Si aún no vinculaste el bot, redeploy para generar un nuevo código.')
       }
     }
   })
-
-  // Pairing code solo si aún no está registrada la sesión
-  if (!sock.authState.creds.registered) {
-    const phoneNumber = (process.env.OWNER_NUMBER || '').replace(/[^0-9]/g, '')
-
-    if (!phoneNumber) {
-      console.log('⚠️ No hay OWNER_NUMBER configurado para generar pairing code.')
-    } else {
-      try {
-        console.log('📡 Generando código de emparejamiento...')
-        const code = await sock.requestPairingCode(phoneNumber)
-        console.log(`🔑 Código de emparejamiento: ${code}`)
-      } catch (e) {
-        console.error('❌ No pude generar el pairing code:', e)
-      }
-    }
-  }
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return
