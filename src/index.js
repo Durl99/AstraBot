@@ -1,6 +1,6 @@
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
-  fetchLatestBaileysVersion,
   useMultiFileAuthState,
   downloadMediaMessage
 } from '@whiskeysockets/baileys'
@@ -17,17 +17,18 @@ const db = loadDB()
 async function startBot() {
   const sessionPath = process.env.SESSION_PATH || './src/sessions'
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
-  const { version } = await fetchLatestBaileysVersion()
   const commands = await loadCommands()
 
   const sock = makeWASocket({
-    version,
     auth: state,
     logger,
-    browser: [config.botName, 'Chrome', '1.0.0'],
+    printQRInTerminal: false,
+    browser: Browsers.macOS('Google Chrome'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
-    printQRInTerminal: false
+    connectTimeoutMs: 60_000,
+    keepAliveIntervalMs: 30_000,
+    defaultQueryTimeoutMs: 60_000
   })
 
   let pairingRequested = false
@@ -41,9 +42,11 @@ async function startBot() {
 
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update
+
     if (qr) {
-      console.log('📷 QR detectado, pero en hosting usaremos pairing code.')
+      console.log('📷 QR detectado.')
       try {
         qrcode.generate(qr, { small: true })
       } catch {
@@ -51,16 +54,8 @@ async function startBot() {
       }
     }
 
-    if (connection === 'connecting') {
-      console.log('🛰️ AstraBot está iniciando conexión...')
-    }
-
-    if (connection === 'open') {
-      console.log(`✅ ${config.botName} conectado`)
-    }
-
-    // Pedir pairing code SOLO una vez y solo cuando aún no hay sesión registrada
-    if (!sock.authState.creds.registered && !pairingRequested) {
+    // Pairing code: pedirlo SOLO cuando ya exista connecting o qr
+    if (!sock.authState.creds.registered && !pairingRequested && (connection === 'connecting' || !!qr)) {
       pairingRequested = true
 
       const phoneNumber = (
@@ -70,21 +65,22 @@ async function startBot() {
       ).replace(/[^0-9]/g, '')
 
       if (!phoneNumber) {
-        console.log('⚠️ No hay BOT_PHONE_NUMBER ni OWNER_NUMBER configurado para generar pairing code.')
+        console.log('⚠️ No hay BOT_PHONE_NUMBER ni OWNER_NUMBER configurado.')
       } else {
         try {
-          // Espera breve para que el socket termine de inicializar
-          await new Promise(resolve => setTimeout(resolve, 5000))
-
           console.log('📡 Generando código de emparejamiento...')
           const code = await sock.requestPairingCode(phoneNumber)
-          console.log(`🔑 Código de emparejamiento: ${code}`)
-          console.log('📱 Usa ese código en WhatsApp > Dispositivos vinculados > Vincular con número')
+          console.log(`🔑 Código de emparejamiento: ${code?.match(/.{1,4}/g)?.join('-') || code}`)
+          console.log('📱 WhatsApp > Dispositivos vinculados > Vincular con número')
         } catch (e) {
           console.error('❌ No pude generar el pairing code:', e)
           pairingRequested = false
         }
       }
+    }
+
+    if (connection === 'open') {
+      console.log(`✅ ${config.botName} conectado`)
     }
 
     if (connection === 'close') {
@@ -96,7 +92,7 @@ async function startBot() {
       if (shouldReconnect) {
         startBot()
       } else {
-        console.log('⚠️ La sesión quedó cerrada. Si aún no vinculaste el bot, redeploy para generar un nuevo código.')
+        console.log('⚠️ Sesión cerrada. Si no alcanzaste a vincular, redeploy para pedir un nuevo código.')
       }
     }
   })
