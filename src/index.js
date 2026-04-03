@@ -13,9 +13,10 @@ import { loadDB, saveDB } from './store.js'
 
 const logger = pino({ level: 'silent' })
 
+const pairingNumber = (process.env.PAIRING_NUMBER || '').replace(/[^0-9]/g, '')
+
 const startBot = async () => {
   const { state, saveCreds } = await useMultiFileAuthState('./src/sessions')
-
   const { version } = await fetchLatestBaileysVersion()
 
   const sock = makeWASocket({
@@ -31,12 +32,28 @@ const startBot = async () => {
 
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('connection.update', (update) => {
+  let pairingCodeRequested = false
+
+  sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update
 
-    if (qr) {
-      console.log('\n📱 Escanea este QR:\n')
-      qrcode.generate(qr, { small: true })
+    try {
+      const notRegistered =
+        !!pairingNumber &&
+        !sock.authState?.creds?.registered &&
+        !pairingCodeRequested
+
+      if (notRegistered) {
+        pairingCodeRequested = true
+        const code = await sock.requestPairingCode(pairingNumber)
+        console.log(`🔑 Pairing code AstraBot: ${code}`)
+        console.log('📱 En tu WhatsApp ve a Dispositivos vinculados > Vincular con número de teléfono')
+      } else if (qr && !pairingNumber) {
+        console.log('\n📱 Escanea este QR:\n')
+        qrcode.generate(qr, { small: true })
+      }
+    } catch (err) {
+      console.error('Error solicitando pairing code:', err)
     }
 
     if (connection === 'close') {
@@ -50,7 +67,7 @@ const startBot = async () => {
       if (shouldReconnect) {
         startBot()
       } else {
-        console.log('🚫 Sesión cerrada. Borra sessions y vuelve a escanear.')
+        console.log('🚫 Sesión cerrada. Borra sessions y vuelve a vincular.')
       }
     }
 
@@ -78,7 +95,6 @@ const startBot = async () => {
     }
   })
 
-  // guardado automático cada 30s
   setInterval(() => {
     saveDB(db)
   }, 30000)
