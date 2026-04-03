@@ -1,10 +1,11 @@
 import makeWASocket, {
   DisconnectReason,
+  fetchLatestBaileysVersion,
   useMultiFileAuthState,
-  downloadMediaMessage
+  downloadMediaMessage,
+  Browsers
 } from '@whiskeysockets/baileys'
 import pino from 'pino'
-import qrcode from 'qrcode-terminal'
 import { Boom } from '@hapi/boom'
 import { loadCommands, handleMessage } from './handler.js'
 import { config } from './config.js'
@@ -16,18 +17,20 @@ const db = loadDB()
 async function startBot() {
   const sessionPath = process.env.SESSION_PATH || './src/sessions'
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
+  const { version } = await fetchLatestBaileysVersion()
   const commands = await loadCommands()
 
   const sock = makeWASocket({
+    version,
     auth: state,
     logger,
+    browser: Browsers.macOS('Chrome'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
-    printQRInTerminal: false,
-    connectTimeoutMs: 60000,
-    keepAliveIntervalMs: 30000,
-    defaultQueryTimeoutMs: 60000
+    printQRInTerminal: false
   })
+
+  let pairingRequested = false
 
   sock.downloadMediaMessage = async (msg) => {
     return downloadMediaMessage(msg, 'buffer', {}, {
@@ -38,17 +41,29 @@ async function startBot() {
 
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
-    if (connection === 'connecting') {
-      console.log('🛰️ AstraBot está iniciando conexión...')
-    }
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update
 
-    if (qr) {
-      console.log('📷 Escanea este QR para vincular AstraBot:')
-      try {
-        qrcode.generate(qr, { small: true })
-      } catch (e) {
-        console.log('No pude renderizar el QR en consola.')
+    if ((connection === 'connecting' || !!qr) && !sock.authState.creds.registered && !pairingRequested) {
+      pairingRequested = true
+
+      const phoneNumber = (
+        process.env.BOT_PHONE_NUMBER ||
+        process.env.OWNER_NUMBER ||
+        ''
+      ).replace(/[^0-9]/g, '')
+
+      if (!phoneNumber) {
+        console.log('⚠️ Falta BOT_PHONE_NUMBER u OWNER_NUMBER')
+      } else {
+        try {
+          console.log('📡 Generando código de emparejamiento...')
+          const code = await sock.requestPairingCode(phoneNumber)
+          console.log(`🔑 Código de emparejamiento: ${code}`)
+          console.log('📱 WhatsApp > Dispositivos vinculados > Vincular con número')
+        } catch (e) {
+          console.error('❌ Error al pedir pairing code:', e)
+        }
       }
     }
 
@@ -59,6 +74,7 @@ async function startBot() {
     if (connection === 'close') {
       const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+
       console.log('Conexión cerrada:', statusCode, 'Reconectar:', shouldReconnect)
 
       if (shouldReconnect) {
