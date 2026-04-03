@@ -15,7 +15,8 @@ const logger = pino({ level: 'silent' })
 const db = loadDB()
 
 async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('./src/sessions')
+const sessionPath = process.env.SESSION_PATH || './src/sessions'
+const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
   const { version } = await fetchLatestBaileysVersion()
   const commands = await loadCommands()
 
