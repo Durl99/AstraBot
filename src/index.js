@@ -26,9 +26,9 @@ async function startBot() {
     browser: Browsers.macOS('Google Chrome'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
-    connectTimeoutMs: 60_000,
-    keepAliveIntervalMs: 30_000,
-    defaultQueryTimeoutMs: 60_000
+    connectTimeoutMs: 60000,
+    keepAliveIntervalMs: 30000,
+    defaultQueryTimeoutMs: 60000
   })
 
   let pairingRequested = false
@@ -45,17 +45,13 @@ async function startBot() {
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update
 
-    if (qr) {
-      console.log('📷 QR detectado.')
-      try {
-        qrcode.generate(qr, { small: true })
-      } catch {
-        console.log('No pude renderizar el QR en consola.')
-      }
+    if (connection === 'connecting') {
+      console.log('🛰️ AstraBot está iniciando conexión...')
     }
 
-    // Pairing code: pedirlo SOLO cuando ya exista connecting o qr
-    if (!sock.authState.creds.registered && !pairingRequested && (connection === 'connecting' || !!qr)) {
+    // IMPORTANTE:
+    // pairing SOLO cuando exista qr y solo una vez
+    if (!sock.authState.creds.registered && !!qr && !pairingRequested) {
       pairingRequested = true
 
       const phoneNumber = (
@@ -68,14 +64,24 @@ async function startBot() {
         console.log('⚠️ No hay BOT_PHONE_NUMBER ni OWNER_NUMBER configurado.')
       } else {
         try {
-          console.log('📡 Generando código de emparejamiento...')
+          console.log('📷 QR detectado. Preparando pairing code...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+
           const code = await sock.requestPairingCode(phoneNumber)
-          console.log(`🔑 Código de emparejamiento: ${code?.match(/.{1,4}/g)?.join('-') || code}`)
+          const prettyCode = code?.match(/.{1,4}/g)?.join('-') || code
+
+          console.log(`🔑 Código de emparejamiento: ${prettyCode}`)
           console.log('📱 WhatsApp > Dispositivos vinculados > Vincular con número')
         } catch (e) {
           console.error('❌ No pude generar el pairing code:', e)
           pairingRequested = false
         }
+      }
+
+      try {
+        qrcode.generate(qr, { small: true })
+      } catch {
+        console.log('No pude renderizar el QR en consola.')
       }
     }
 
