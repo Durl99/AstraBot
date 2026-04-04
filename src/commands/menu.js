@@ -1,4 +1,8 @@
+import fs from 'fs'
+import path from 'path'
 import { AstraText } from '../astramessages.js'
+
+const MENU_IMAGE_PATH = path.resolve('src/assets/menu-astrabot.png')
 
 export default {
   name: 'menu',
@@ -15,7 +19,7 @@ export default {
       group: { emoji: '🌌', title: 'GESTION DE ORBITA' },
       moderation: { emoji: '🛡️', title: 'MODERACION ESTELAR' },
       media: { emoji: '🪐', title: 'MEDIA Y RELIQUIAS' },
-      fun: { emoji: '🎮', title: 'DIVERSIÓN GALACTICA' },
+      fun: { emoji: '🎮', title: 'DIVERSION GALACTICA' },
       owner: { emoji: '👑', title: 'NUCLEO DE MANDO' },
       otros: { emoji: '✨', title: 'OTROS MODULOS' }
     }
@@ -60,8 +64,12 @@ export default {
 
     lines.push('🌙 *AstraBot domina la orbita.*')
 
+    const caption = lines.join('\n')
+    const image = fs.readFileSync(MENU_IMAGE_PATH)
+
     await sock.sendMessage(from, {
-      text: lines.join('\n')
+      image,
+      caption
     })
   }
 }
