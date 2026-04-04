@@ -1,4 +1,4 @@
-import { cleanupDownload, downloadGeneric, readDownloadedFile } from '../downloads.js'
+import { cleanupDownload, downloadGeneric, readDownloadedFile, resolveYouTubeInput } from '../downloads.js'
 
 export default {
   name: 'ytmp4',
@@ -7,22 +7,26 @@ export default {
   category: 'media',
   cooldown: 5,
   async run({ sock, from, args, msg }) {
-    const url = args[0]
+    const input = args.join(' ').trim()
 
-    if (!url) {
+    if (!input) {
       return sock.sendMessage(from, {
-        text: '🧭 Uso correcto: *.ytmp4 enlace*'
+        text: '🧭 Uso correcto: *.ytmp4 enlace* o *.ytmp4 nombre del video*'
       }, { quoted: msg })
     }
-
-    await sock.sendMessage(from, {
-      text: '🚀 AstraBot esta trayendo el video desde la orbita de YouTube...'
-    }, { quoted: msg })
 
     let media = null
 
     try {
-      media = await downloadGeneric(url, true)
+      const target = await resolveYouTubeInput(input)
+
+      await sock.sendMessage(from, {
+        text: target.title
+          ? `🚀 AstraBot encontro *${target.title}* y esta trayendo su video orbital...`
+          : '🚀 AstraBot esta trayendo el video desde la orbita de YouTube...'
+      }, { quoted: msg })
+
+      media = await downloadGeneric(target.url, true)
       const buffer = await readDownloadedFile(media.filePath)
 
       await sock.sendMessage(from, {
@@ -33,7 +37,7 @@ export default {
     } catch (error) {
       console.error('Error ytmp4:', error)
       await sock.sendMessage(from, {
-        text: '⚠️ No pude forjar el video astral desde ese enlace de YouTube.'
+        text: '⚠️ No pude forjar el video astral desde ese enlace o busqueda de YouTube.'
       }, { quoted: msg })
     } finally {
       await cleanupDownload(media?.cleanupDir)

@@ -11,6 +11,10 @@ function tempRoot() {
   return config.downloadTempDir || os.tmpdir()
 }
 
+function isHttpUrl(value = '') {
+  return /^https?:\/\//i.test(String(value).trim())
+}
+
 function isYouTubeUrl(url = '') {
   return /(?:youtube\.com|youtu\.be)/i.test(String(url))
 }
@@ -108,6 +112,40 @@ export async function fetchMediaInfo(url) {
   ], { skipCookies: youtube })
 
   return JSON.parse(stdout)
+}
+
+export async function resolveYouTubeInput(input) {
+  const value = String(input || '').trim()
+  if (!value) {
+    throw new Error('Missing YouTube input')
+  }
+
+  if (isHttpUrl(value)) {
+    return {
+      query: value,
+      url: value,
+      title: ''
+    }
+  }
+
+  const { stdout } = await runYtDlp([
+    '--dump-single-json',
+    '--no-warnings',
+    `ytsearch1:${value}`
+  ], { skipCookies: true })
+
+  const json = JSON.parse(stdout)
+  const entry = Array.isArray(json?.entries) ? json.entries[0] : json
+
+  if (!entry) {
+    throw new Error('No YouTube results found')
+  }
+
+  return {
+    query: value,
+    url: entry.webpage_url || entry.url || `https://youtu.be/${entry.id}`,
+    title: entry.title || ''
+  }
 }
 
 export async function downloadAudio(url) {

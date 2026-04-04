@@ -1,4 +1,4 @@
-import { cleanupDownload, downloadAudio, readDownloadedFile } from '../downloads.js'
+import { cleanupDownload, downloadAudio, readDownloadedFile, resolveYouTubeInput } from '../downloads.js'
 
 export default {
   name: 'ytmp3',
@@ -7,22 +7,26 @@ export default {
   category: 'media',
   cooldown: 5,
   async run({ sock, from, args, msg }) {
-    const url = args[0]
+    const input = args.join(' ').trim()
 
-    if (!url) {
+    if (!input) {
       return sock.sendMessage(from, {
-        text: '🧭 Uso correcto: *.ytmp3 enlace*'
+        text: '🧭 Uso correcto: *.ytmp3 enlace* o *.ytmp3 nombre del video*'
       }, { quoted: msg })
     }
-
-    await sock.sendMessage(from, {
-      text: '🌌 AstraBot esta extrayendo el audio desde la orbita de YouTube...'
-    }, { quoted: msg })
 
     let media = null
 
     try {
-      media = await downloadAudio(url)
+      const target = await resolveYouTubeInput(input)
+
+      await sock.sendMessage(from, {
+        text: target.title
+          ? `🌌 AstraBot encontro *${target.title}* y esta extrayendo su audio astral...`
+          : '🌌 AstraBot esta extrayendo el audio desde la orbita de YouTube...'
+      }, { quoted: msg })
+
+      media = await downloadAudio(target.url)
       const buffer = await readDownloadedFile(media.filePath)
 
       await sock.sendMessage(from, {
@@ -34,7 +38,7 @@ export default {
     } catch (error) {
       console.error('Error ytmp3:', error)
       await sock.sendMessage(from, {
-        text: '⚠️ No pude forjar el audio astral desde ese enlace de YouTube.'
+        text: '⚠️ No pude forjar el audio astral desde ese enlace o busqueda de YouTube.'
       }, { quoted: msg })
     } finally {
       await cleanupDownload(media?.cleanupDir)
