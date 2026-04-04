@@ -13,7 +13,7 @@ export default {
 
     if (!items.length) {
       return sock.sendMessage(from, {
-        text: '🎒 *INVENTARIO ASTRAL*\n\nTu inventario está vacío.'
+        text: '🎒 *INVENTARIO ASTRAL*\n\nTu mochila cosmica esta vacia. Ve a la tienda de AstraBot para llenarla de reliquias.'
       })
     }
 
@@ -21,7 +21,7 @@ export default {
       '🎒 *INVENTARIO ASTRAL*',
       '',
       ...items.map(({ item, qty, key }) =>
-        `${item?.emoji || '✨'} *${key}*${item?.name ? ` — ${item.name}` : ''}\n📦 Cantidad: *${qty}*`
+        `${item?.emoji || '✨'} *${key}*${item?.name ? ` - ${item.name}` : ''}\n📦 Cantidad orbital: *${qty}*`
       )
     ]
 

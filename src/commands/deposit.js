@@ -20,13 +20,13 @@ export default {
 
     if (!amount || amount < 1) {
       return sock.sendMessage(from, {
-        text: '🧭 Uso correcto: *.deposit 100* o *.deposit all*'
+        text: '🧭 Usa *.deposit 100* o *.deposit all* para mover coins al banco orbital.'
       })
     }
 
     if (user.coins < amount) {
       return sock.sendMessage(from, {
-        text: '🪙 No tienes suficientes coins en la cartera para depositar esa cantidad.'
+        text: '🪙 No tienes suficientes coins en tu cartera astral para depositar esa cantidad.'
       })
     }
 
@@ -35,7 +35,11 @@ export default {
     saveDB(db)
 
     await sock.sendMessage(from, {
-      text: `🏦 *DEPÓSITO ORBITAL COMPLETADO*\n\nDepositaste *${amount}* coins.\n🪙 Cartera: *${user.coins}*\n🏦 Banco: *${user.bank}*`
+      text:
+        '🏦 *DEPOSITO ORBITAL COMPLETADO*\n\n' +
+        `AstraBot guardo *${amount}* coins en tu banco.\n` +
+        `🪙 Cartera astral: *${user.coins}*\n` +
+        `🏦 Banco orbital: *${user.bank}*`
     })
   }
 }

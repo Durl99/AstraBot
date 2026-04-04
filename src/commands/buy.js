@@ -4,7 +4,7 @@ import { getShopItem, addItem } from '../economy.js'
 export default {
   name: 'buy',
   aliases: ['comprar'],
-  description: 'Compra items de la tienda galáctica',
+  description: 'Compra items de la tienda galactica',
   category: 'fun',
   cooldown: 3,
   async run({ sock, from, sender, args, db }) {
@@ -14,7 +14,7 @@ export default {
     const item = getShopItem(itemKey)
     if (!item) {
       return sock.sendMessage(from, {
-        text: '🧭 Uso correcto: *.buy item cantidad*\nEjemplo: *.buy apple 2*'
+        text: '🧭 Usa *.buy item cantidad* para comprar en la tienda astral.\nEjemplo: *.buy apple 2*'
       })
     }
 
@@ -23,7 +23,7 @@ export default {
 
     if (user.coins < total) {
       return sock.sendMessage(from, {
-        text: `🪙 No tienes suficientes coins.\nNecesitas *${total}* y solo tienes *${user.coins}*.`
+        text: `🪙 No tienes suficientes coins astrales.\nNecesitas *${total}* y solo orbitas con *${user.coins}*.`
       })
     }
 
@@ -33,7 +33,7 @@ export default {
 
     await sock.sendMessage(from, {
       text:
-        `🛍️ *COMPRA COMPLETADA*\n\n` +
+        '🛍️ *COMPRA ASTRAL COMPLETADA*\n\n' +
         `${item.emoji} Compraste *${qty}* x *${item.name}*\n` +
         `💸 Gastaste *${total}* coins\n` +
         `🪙 Coins restantes: *${user.coins}*`

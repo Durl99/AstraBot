@@ -20,13 +20,13 @@ export default {
 
     if (!amount || amount < 1) {
       return sock.sendMessage(from, {
-        text: '🧭 Uso correcto: *.withdraw 100* o *.withdraw all*'
+        text: '🧭 Usa *.withdraw 100* o *.withdraw all* para retirar desde tu banco orbital.'
       })
     }
 
     if (user.bank < amount) {
       return sock.sendMessage(from, {
-        text: '🏦 No tienes suficientes coins en el banco para retirar esa cantidad.'
+        text: '🏦 No tienes suficientes coins en el banco orbital para retirar esa cantidad.'
       })
     }
 
@@ -35,7 +35,11 @@ export default {
     saveDB(db)
 
     await sock.sendMessage(from, {
-      text: `💸 *RETIRO ORBITAL COMPLETADO*\n\nRetiraste *${amount}* coins.\n🪙 Cartera: *${user.coins}*\n🏦 Banco: *${user.bank}*`
+      text:
+        '💸 *RETIRO ORBITAL COMPLETADO*\n\n' +
+        `Recuperaste *${amount}* coins desde tu banco.\n` +
+        `🪙 Cartera astral: *${user.coins}*\n` +
+        `🏦 Banco orbital: *${user.bank}*`
     })
   }
 }
