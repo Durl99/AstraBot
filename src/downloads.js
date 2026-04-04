@@ -11,6 +11,10 @@ function tempRoot() {
   return config.downloadTempDir || os.tmpdir()
 }
 
+function isYouTubeUrl(url = '') {
+  return /(?:youtube\.com|youtu\.be)/i.test(String(url))
+}
+
 function sanitizeFileName(name = 'astra-media') {
   return String(name)
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
@@ -23,10 +27,26 @@ async function makeTempDir(prefix = 'astrabot-') {
   return fs.mkdtemp(path.join(tempRoot(), prefix))
 }
 
-async function runYtDlp(args) {
-  const baseArgs = []
+function ytDlpCommandCandidates() {
+  const candidates = [[config.ytDlpBin, []]]
 
-  if (config.ytDlpCookiesFile) {
+  if (config.ytDlpBin === 'yt-dlp') {
+    if (process.platform === 'win32') {
+      candidates.push(['py', ['-m', 'yt_dlp']])
+      candidates.push(['python', ['-m', 'yt_dlp']])
+    } else {
+      candidates.push(['python3', ['-m', 'yt_dlp']])
+      candidates.push(['python', ['-m', 'yt_dlp']])
+    }
+  }
+
+  return candidates
+}
+
+async function runYtDlp(args, options = {}) {
+  const baseArgs = ['--ignore-config']
+
+  if (!options.skipCookies && config.ytDlpCookiesFile) {
     baseArgs.push('--cookies', config.ytDlpCookiesFile)
   }
 
@@ -34,11 +54,22 @@ async function runYtDlp(args) {
     baseArgs.push('--ffmpeg-location', config.ffmpegBin)
   }
 
-  return execFileAsync(config.ytDlpBin, [...baseArgs, ...args], {
-    timeout: config.downloadTimeoutMs,
-    windowsHide: true,
-    maxBuffer: 10 * 1024 * 1024
-  })
+  let lastError = null
+
+  for (const [command, prefixArgs] of ytDlpCommandCandidates()) {
+    try {
+      return await execFileAsync(command, [...prefixArgs, ...baseArgs, ...args], {
+        timeout: config.downloadTimeoutMs,
+        windowsHide: true,
+        maxBuffer: 10 * 1024 * 1024
+      })
+    } catch (error) {
+      lastError = error
+      if (error?.code !== 'ENOENT') throw error
+    }
+  }
+
+  throw lastError || new Error('Could not execute yt-dlp')
 }
 
 async function getMediaFile(dir) {
@@ -63,40 +94,51 @@ async function getMediaFile(dir) {
 }
 
 export async function fetchMediaInfo(url) {
+  const youtube = isYouTubeUrl(url)
+  const extraArgs = youtube
+    ? ['--extractor-args', 'youtube:player_client=android,ios']
+    : []
+
   const { stdout } = await runYtDlp([
     '--dump-single-json',
     '--no-warnings',
     '--skip-download',
+    ...extraArgs,
     url
-  ])
+  ], { skipCookies: youtube })
 
   return JSON.parse(stdout)
 }
 
 export async function downloadAudio(url) {
-  const info = await fetchMediaInfo(url)
+  const youtube = isYouTubeUrl(url)
+  const info = youtube ? null : await fetchMediaInfo(url)
   const dir = await makeTempDir('astrabot-audio-')
   const template = path.join(dir, '%(title).80s.%(ext)s')
 
   try {
     await runYtDlp([
       '--no-warnings',
+      ...(youtube ? ['--extractor-args', 'youtube:player_client=android,ios'] : []),
+      ...(youtube ? ['-f', 'ba/b'] : []),
       '--extract-audio',
       '--audio-format', 'mp3',
       '--audio-quality', '0',
       '--output', template,
       url
-    ])
+    ], { skipCookies: youtube })
 
     const result = await getMediaFile(dir)
     if (result.stat.size > config.downloadMaxFileBytes) {
       throw new Error('downloaded file exceeds the configured upload limit')
     }
 
+    const baseName = path.basename(result.file, path.extname(result.file))
+
     return {
       kind: 'audio',
-      title: info.title || 'Astra audio',
-      fileName: `${sanitizeFileName(info.title || 'astra-audio')}.mp3`,
+      title: info?.title || baseName || 'Astra audio',
+      fileName: `${sanitizeFileName(info?.title || baseName || 'astra-audio')}.mp3`,
       filePath: result.file,
       size: result.stat.size,
       cleanupDir: dir
@@ -126,16 +168,37 @@ function genericArgs(url, template) {
 }
 
 export async function downloadGeneric(url, preferVideo = true) {
-  const info = await fetchMediaInfo(url)
+  const youtube = isYouTubeUrl(url)
+  const info = youtube ? null : await fetchMediaInfo(url)
   const dir = await makeTempDir('astrabot-media-')
   const template = path.join(dir, '%(title).80s.%(ext)s')
+  const primaryArgs = preferVideo
+    ? youtube
+      ? [
+          '--no-warnings',
+          '--extractor-args', 'youtube:player_client=android,ios',
+          '-f', 'bv*+ba/b',
+          '--merge-output-format', 'mp4',
+          '--output', template,
+          url
+        ]
+      : videoArgs(url, template)
+    : youtube
+      ? [
+          '--no-warnings',
+          '--extractor-args', 'youtube:player_client=android,ios',
+          '-f', 'b',
+          '--output', template,
+          url
+        ]
+      : genericArgs(url, template)
 
   try {
     try {
-      await runYtDlp(preferVideo ? videoArgs(url, template) : genericArgs(url, template))
+      await runYtDlp(primaryArgs, { skipCookies: youtube })
     } catch (error) {
       if (!preferVideo) throw error
-      await runYtDlp(genericArgs(url, template))
+      await runYtDlp(genericArgs(url, template), { skipCookies: youtube })
     }
 
     const result = await getMediaFile(dir)
@@ -144,6 +207,7 @@ export async function downloadGeneric(url, preferVideo = true) {
     }
 
     const ext = path.extname(result.file).slice(1).toLowerCase()
+    const baseName = path.basename(result.file, path.extname(result.file))
     const mimeKind = ['jpg', 'jpeg', 'png', 'webp'].includes(ext)
       ? 'image'
       : ['mp3', 'm4a', 'aac', 'wav', 'ogg'].includes(ext)
@@ -152,8 +216,8 @@ export async function downloadGeneric(url, preferVideo = true) {
 
     return {
       kind: mimeKind,
-      title: info.title || 'Astra media',
-      fileName: `${sanitizeFileName(info.title || 'astra-media')}.${ext || 'bin'}`,
+      title: info?.title || baseName || 'Astra media',
+      fileName: `${sanitizeFileName(info?.title || baseName || 'astra-media')}.${ext || 'bin'}`,
       filePath: result.file,
       size: result.stat.size,
       cleanupDir: dir
