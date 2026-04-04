@@ -84,6 +84,9 @@ export function ensureBanGroup(db, groupId) {
 export function ensureUser(db, userId) {
   if (!db.users[userId]) {
     db.users[userId] = {
+      registered: false,
+      regName: '',
+      regTime: 0,
       coins: 100,
       bank: 0,
       xp: 0,
@@ -97,6 +100,9 @@ export function ensureUser(db, userId) {
 
   const user = db.users[userId]
 
+  if (typeof user.registered !== 'boolean') user.registered = false
+  if (typeof user.regName !== 'string') user.regName = ''
+  if (typeof user.regTime !== 'number') user.regTime = 0
   if (typeof user.coins !== 'number') user.coins = 100
   if (typeof user.bank !== 'number') user.bank = 0
   if (typeof user.xp !== 'number') user.xp = 0

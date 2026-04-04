@@ -1,5 +1,4 @@
 import { ensureUser, saveDB } from '../store.js'
-import { AstraText } from '../astramessages.js'
 
 function formatTime(ms) {
   const s = Math.ceil(ms / 1000)
@@ -7,19 +6,25 @@ function formatTime(ms) {
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
   const parts = []
-  if (h) parts.push(`${h}h`)
-  if (m) parts.push(`${m}m`)
-  if (sec || !parts.length) parts.push(`${sec}s`)
+  if (h) parts.push(${h}h)
+  if (m) parts.push(${m}m)
+  if (sec || !parts.length) parts.push(${sec}s)
   return parts.join(' ')
 }
 
+const rewardTexts = [
+  amount => 🌠 *RECOMPENSA DIARIA ASTRAL*\n\nLa constelación te favoreció con *${amount}* coins.\nVuelve mañana por otra carga cósmica.,
+  amount => 🪐 *PAGO ORBITAL RECIBIDO*\n\nAstraBot transfirió *${amount}* coins a tu cartera.\nLa órbita reconoce tu presencia.,
+  amount => ✨ *BONO CÓSMICO*\n\nRecibiste *${amount}* coins por mantener tu señal activa dentro de la galaxia.
+]
+
 export default {
   name: 'daily',
-  aliases: [],
-  description: 'Reclama tu recompensa diaria',
+  aliases: ['diario'],
+  description: 'Reclama tu recompensa diaria astral',
   category: 'fun',
   cooldown: 3,
-  async run({ sock, from, sender, db }) {
+  async run({ sock, from, sender, db, msg }) {
     const user = ensureUser(db, sender)
     const now = Date.now()
     const cd = 24 * 60 * 60 * 1000
@@ -27,17 +32,19 @@ export default {
 
     if (left > 0) {
       return sock.sendMessage(from, {
-        text: AstraText.cooldownCustom('daily', formatTime(left))
-      })
+        text:
+          '⌛ RECOMPENSA EN RECARGA\n\n' +
+          Debes esperar *${formatTime(left)}* para volver a reclamar tu daily.
+      }, { quoted: msg })
     }
 
-    const amount = 250
+    const amount = Math.floor(Math.random() * 201) + 250
     user.coins += amount
     user.lastDaily = now
     saveDB(db)
 
-    await sock.sendMessage(from, {
-      text: AstraText.dailyClaimed(amount)
-    })
+    const text = rewardTexts[Math.floor(Math.random() * rewardTexts.length)](amount)
+
+    await sock.sendMessage(from, { text }, { quoted: msg })
   }
 }
