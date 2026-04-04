@@ -148,6 +148,33 @@ export async function resolveYouTubeInput(input) {
   }
 }
 
+export async function searchYouTubeResults(query, limit = 5) {
+  const value = String(query || '').trim()
+  if (!value) {
+    throw new Error('Missing YouTube search query')
+  }
+
+  const { stdout } = await runYtDlp([
+    '--dump-single-json',
+    '--no-warnings',
+    `ytsearch${limit}:${value}`
+  ], { skipCookies: true })
+
+  const json = JSON.parse(stdout)
+  const entries = Array.isArray(json?.entries) ? json.entries : []
+
+  return entries
+    .filter(Boolean)
+    .map((entry, index) => ({
+      index: index + 1,
+      id: entry.id || '',
+      title: entry.title || `Resultado ${index + 1}`,
+      url: entry.webpage_url || entry.url || `https://youtu.be/${entry.id}`,
+      duration: entry.duration || 0,
+      channel: entry.channel || entry.uploader || ''
+    }))
+}
+
 export async function downloadAudio(url) {
   const youtube = isYouTubeUrl(url)
   const info = youtube ? null : await fetchMediaInfo(url)
