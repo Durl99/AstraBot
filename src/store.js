@@ -10,6 +10,11 @@ const defaultDb = {
     public: true
   },
   groups: {},
+  clans: {},
+  market: {
+    nextId: 1,
+    listings: []
+  },
   antiFlood: {},
   warnings: {},
   bans: {},
@@ -31,6 +36,10 @@ export function loadDB() {
     if (!data.bot) data.bot = { public: true }
     if (typeof data.bot.public !== 'boolean') data.bot.public = true
     if (!data.groups) data.groups = {}
+    if (!data.clans) data.clans = {}
+    if (!data.market || typeof data.market !== 'object') data.market = { nextId: 1, listings: [] }
+    if (typeof data.market.nextId !== 'number') data.market.nextId = 1
+    if (!Array.isArray(data.market.listings)) data.market.listings = []
     if (!data.antiFlood) data.antiFlood = {}
     if (!data.warnings) data.warnings = {}
     if (!data.bans) data.bans = {}
@@ -109,6 +118,7 @@ export function ensureUser(db, userId) {
       achievements: {},
       missions: {},
       stats: {},
+      clanId: null,
       inventory: {}
     }
   }
@@ -130,6 +140,7 @@ export function ensureUser(db, userId) {
   if (!user.achievements || typeof user.achievements !== 'object') user.achievements = {}
   if (!user.missions || typeof user.missions !== 'object') user.missions = {}
   if (!user.stats || typeof user.stats !== 'object') user.stats = {}
+  if (typeof user.clanId !== 'string' && user.clanId !== null) user.clanId = null
   if (!user.inventory || typeof user.inventory !== 'object') user.inventory = {}
 
   return user
