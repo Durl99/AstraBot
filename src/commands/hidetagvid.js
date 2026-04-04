@@ -1,10 +1,10 @@
-import { getContextInfo } from '../utils.js'
+import { downloadMediaBuffer, getContextInfo } from '../utils.js'
 import { AstraText } from '../astramessages.js'
 
 export default {
   name: 'hidetagvid',
   aliases: ['htvid'],
-  description: 'Envía un video mencionando a todos en oculto',
+  description: 'Envia un video mencionando a todos en oculto',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -22,14 +22,16 @@ export default {
     }
 
     if (!targetMsg) {
-      return sock.sendMessage(from, { text: '🎥 Envía o responde a un video con .hidetagvid' })
+      return sock.sendMessage(from, {
+        text: '🎥 Envia o responde a un video con *.hidetagvid* para lanzar una transmision orbital.'
+      })
     }
 
     const metadata = await sock.groupMetadata(from)
     const mentions = metadata.participants.map(p => p.id)
-    const caption = args.join(' ') || '🛰️ Transmisión visual orbital.'
+    const caption = args.join(' ') || '🛰️ Transmision visual orbital desplegada en toda la constelacion.'
 
-    const video = await sock.downloadMediaMessage(targetMsg)
+    const video = await downloadMediaBuffer(targetMsg)
 
     await sock.sendMessage(from, {
       video,

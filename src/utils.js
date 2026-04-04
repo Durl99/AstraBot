@@ -1,3 +1,4 @@
+import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 import sharp from 'sharp'
 import webp from 'node-webpmux'
 
@@ -126,6 +127,47 @@ export function getContextInfo(msg) {
     m.ephemeralMessage?.message?.videoMessage?.contextInfo ||
     {}
   )
+}
+
+function getDownloadableNode(msg) {
+  const message = msg?.message || msg || {}
+
+  if (message.ephemeralMessage?.message) {
+    return getDownloadableNode(message.ephemeralMessage.message)
+  }
+
+  if (message.viewOnceMessage?.message) {
+    return getDownloadableNode(message.viewOnceMessage.message)
+  }
+
+  if (message.viewOnceMessageV2?.message) {
+    return getDownloadableNode(message.viewOnceMessageV2.message)
+  }
+
+  if (message.imageMessage) return ['image', message.imageMessage]
+  if (message.videoMessage) return ['video', message.videoMessage]
+  if (message.audioMessage) return ['audio', message.audioMessage]
+  if (message.documentMessage) return ['document', message.documentMessage]
+  if (message.stickerMessage) return ['sticker', message.stickerMessage]
+
+  return [null, null]
+}
+
+export async function downloadMediaBuffer(msg) {
+  const [type, node] = getDownloadableNode(msg)
+
+  if (!type || !node) {
+    throw new Error('No media message available for download')
+  }
+
+  const stream = await downloadContentFromMessage(node, type)
+  const chunks = []
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+
+  return Buffer.concat(chunks)
 }
 
 export function getQuotedParticipant(msg) {

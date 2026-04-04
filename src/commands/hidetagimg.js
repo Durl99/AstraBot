@@ -1,10 +1,10 @@
-import { getContextInfo } from '../utils.js'
+import { downloadMediaBuffer, getContextInfo } from '../utils.js'
 import { AstraText } from '../astramessages.js'
 
 export default {
   name: 'hidetagimg',
   aliases: ['htimg'],
-  description: 'Envía una imagen mencionando a todos en oculto',
+  description: 'Envia una imagen mencionando a todos en oculto',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -22,14 +22,16 @@ export default {
     }
 
     if (!targetMsg) {
-      return sock.sendMessage(from, { text: '🖼️ Envía o responde a una imagen con .hidetagimg' })
+      return sock.sendMessage(from, {
+        text: '🖼️ Envia o responde a una imagen con *.hidetagimg* para lanzar una señal visual astral.'
+      })
     }
 
     const metadata = await sock.groupMetadata(from)
     const mentions = metadata.participants.map(p => p.id)
-    const caption = args.join(' ') || '🌌 Señal visual astral.'
+    const caption = args.join(' ') || '🌌 Señal visual astral desplegada en toda la orbita.'
 
-    const image = await sock.downloadMediaMessage(targetMsg)
+    const image = await downloadMediaBuffer(targetMsg)
 
     await sock.sendMessage(from, {
       image,

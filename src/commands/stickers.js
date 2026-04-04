@@ -1,4 +1,4 @@
-import { getContextInfo, imageToWebp } from '../utils.js'
+import { downloadMediaBuffer, getContextInfo, imageToWebp } from '../utils.js'
 import { AstraText } from '../astramessages.js'
 
 export default {
@@ -26,7 +26,7 @@ export default {
     }
 
     try {
-      const buffer = await sock.downloadMediaMessage(targetMsg)
+      const buffer = await downloadMediaBuffer(targetMsg)
       const webp = await imageToWebp(buffer)
 
       await sock.sendMessage(from, {

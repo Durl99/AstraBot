@@ -1,4 +1,4 @@
-import { getContextInfo, imageToWebpWithExif } from '../utils.js'
+import { downloadMediaBuffer, getContextInfo, imageToWebpWithExif } from '../utils.js'
 import { AstraText } from '../astramessages.js'
 
 export default {
@@ -30,7 +30,7 @@ export default {
     const author = (parts[1] || 'Astra Core').trim()
 
     try {
-      const buffer = await sock.downloadMediaMessage(targetMsg)
+      const buffer = await downloadMediaBuffer(targetMsg)
       const sticker = await imageToWebpWithExif(buffer, packname, author)
 
       await sock.sendMessage(from, { sticker }, { quoted: msg })

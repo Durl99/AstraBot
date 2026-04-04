@@ -1,10 +1,10 @@
-import { getContextInfo } from '../utils.js'
+import { downloadMediaBuffer, getContextInfo } from '../utils.js'
 import { AstraText } from '../astramessages.js'
 
 export default {
   name: 'totag',
   aliases: [],
-  description: 'Retransmite un mensaje citado a toda la órbita',
+  description: 'Retransmite un mensaje citado a toda la orbita',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -23,24 +23,26 @@ export default {
     const content = {}
     if (quoted.conversation) content.text = quoted.conversation
     else if (quoted.extendedTextMessage?.text) content.text = quoted.extendedTextMessage.text
-    else if (quoted.imageMessage) content.image = await sock.downloadMediaMessage({ message: quoted })
-    else if (quoted.videoMessage) content.video = await sock.downloadMediaMessage({ message: quoted })
-    else if (quoted.stickerMessage) content.sticker = await sock.downloadMediaMessage({ message: quoted })
+    else if (quoted.imageMessage) content.image = await downloadMediaBuffer({ message: quoted })
+    else if (quoted.videoMessage) content.video = await downloadMediaBuffer({ message: quoted })
+    else if (quoted.stickerMessage) content.sticker = await downloadMediaBuffer({ message: quoted })
     else if (quoted.documentMessage) {
-      content.document = await sock.downloadMediaMessage({ message: quoted })
-      content.fileName = quoted.documentMessage.fileName || 'archivo'
+      content.document = await downloadMediaBuffer({ message: quoted })
+      content.fileName = quoted.documentMessage.fileName || 'archivo-orbital'
       content.mimetype = quoted.documentMessage.mimetype
     } else {
-      return sock.sendMessage(from, { text: '⚠️ Ese tipo de mensaje aún no puedo retransmitirlo.' })
+      return sock.sendMessage(from, {
+        text: '⚠️ Ese tipo de mensaje todavia no puedo retransmitirlo a toda la orbita.'
+      })
     }
 
     content.mentions = mentions
 
-    if ((quoted.imageMessage || quoted.videoMessage) && quoted.imageMessage?.caption) {
+    if (quoted.imageMessage?.caption) {
       content.caption = quoted.imageMessage.caption
     }
 
-    if ((quoted.imageMessage || quoted.videoMessage) && quoted.videoMessage?.caption) {
+    if (quoted.videoMessage?.caption) {
       content.caption = quoted.videoMessage.caption
     }
 
