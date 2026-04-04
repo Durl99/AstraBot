@@ -3,7 +3,7 @@ import { ensureGroup, saveDB } from '../store.js'
 export default {
   name: 'setwelcome',
   aliases: [],
-  description: 'Cambia el mensaje de bienvenida',
+  description: 'Cambia el mensaje de bienvenida astral',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -13,7 +13,9 @@ export default {
 
     if (!text) {
       return sock.sendMessage(from, {
-        text: 'Escribe el nuevo mensaje. Usa @user para mencionar y @group para el nombre del bot.'
+        text:
+          '🧭 Escribe el nuevo mensaje de bienvenida astral.\n' +
+          'Puedes usar *@user* para mencionar y *@group* para el nombre del grupo.'
       })
     }
 
@@ -21,6 +23,8 @@ export default {
     group.welcomeText = text
     saveDB(db)
 
-    await sock.sendMessage(from, { text: 'Mensaje de bienvenida actualizado.' })
+    await sock.sendMessage(from, {
+      text: '✨ El mensaje de bienvenida astral fue recalibrado correctamente.'
+    })
   }
 }
