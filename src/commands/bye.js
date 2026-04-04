@@ -1,11 +1,10 @@
 import { ensureGroup, saveDB } from '../store.js'
-import { AstraText } from '../astramessages.js'
-import { sendWelcomePreview } from '../groupwelcome.js'
+import { sendByePreview } from '../groupwelcome.js'
 
 export default {
-  name: 'welcome',
-  aliases: ['bienvenida'],
-  description: 'Activa o desactiva las bienvenidas astrales',
+  name: 'bye',
+  aliases: ['despedida'],
+  description: 'Activa o desactiva las despedidas astrales',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -14,7 +13,11 @@ export default {
     const value = (args[0] || '').toLowerCase()
 
     if (!['on', 'off', 'test'].includes(value)) {
-      return sock.sendMessage(from, { text: AstraText.invalidUsage('.welcome on/off/test') })
+      return sock.sendMessage(from, {
+        text:
+          '🧭 *USO CORRECTO DE BYE*\n\n' +
+          'Usa *.bye on*, *.bye off* o *.bye test* para controlar la despedida astral.'
+      })
     }
 
     const group = ensureGroup(db, from)
@@ -23,24 +26,24 @@ export default {
       const metadata = await sock.groupMetadata(from).catch(() => null)
       const groupName = metadata?.subject || 'esta orbita'
 
-      await sendWelcomePreview({
+      await sendByePreview({
         sock,
         groupId: from,
         participant: sender,
         groupName,
-        template: group.welcomeText
+        template: group.byeText
       })
 
       return
     }
 
-    group.welcome = value === 'on'
+    group.bye = value === 'on'
     saveDB(db)
 
     await sock.sendMessage(from, {
-      text: group.welcome
-        ? `${AstraText.welcomeOn}\n\n🖼️ AstraBot usara la portada astral de bienvenida al detectar nuevos tripulantes.`
-        : AstraText.welcomeOff
+      text: group.bye
+        ? '🌙 La despedida astral quedo activada. AstraBot enviara su sello visual cuando alguien abandone la orbita.'
+        : '🛰️ La despedida astral quedo desactivada en esta orbita.'
     })
   }
 }
