@@ -11,6 +11,7 @@ import QRCode from 'qrcode'
 
 import { loadCommands, handleMessage } from './handler.js'
 import { loadDB, saveDB } from './store.js'
+import { handleGroupParticipantsUpdate } from './groupwelcome.js'
 
 const logger = pino({ level: 'silent' })
 
@@ -258,6 +259,18 @@ const startBot = async () => {
       })
     } catch (err) {
       console.error('Error manejando mensaje:', err)
+    }
+  })
+
+  sock.ev.on('group-participants.update', async (update) => {
+    try {
+      await handleGroupParticipantsUpdate({
+        sock,
+        update,
+        db
+      })
+    } catch (err) {
+      console.error('Error manejando bienvenida/despedida:', err)
     }
   })
 

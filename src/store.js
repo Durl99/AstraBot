@@ -2,6 +2,8 @@ import fs from 'fs'
 import path from 'path'
 
 const DB_PATH = path.resolve('src/database.json')
+const DEFAULT_WELCOME_TEXT = '🌠 *BIENVENIDO A LA ORBITA DE ASTRA BOT* 🌠\n\n@user, tu señal fue detectada en *@group*.\n✨ Ajusta tus estrellas, respira cosmos y disfruta la travesia.'
+const DEFAULT_BYE_TEXT = '🌙 @user abandono la orbita de *@group*.'
 
 const defaultDb = {
   bot: {
@@ -53,8 +55,8 @@ export function ensureGroup(db, jid) {
     db.groups[jid] = {
       antilink: false,
       welcome: false,
-      welcomeText: '🌠 Bienvenido @user a la orbita de *@group*.',
-      byeText: '🌙 @user abandono la orbita de *@group*.',
+      welcomeText: DEFAULT_WELCOME_TEXT,
+      byeText: DEFAULT_BYE_TEXT,
       muted: false,
       antiFlood: false
     }
@@ -64,8 +66,8 @@ export function ensureGroup(db, jid) {
   if (typeof db.groups[jid].welcome !== 'boolean') db.groups[jid].welcome = false
   if (typeof db.groups[jid].muted !== 'boolean') db.groups[jid].muted = false
   if (typeof db.groups[jid].antiFlood !== 'boolean') db.groups[jid].antiFlood = false
-  if (!db.groups[jid].welcomeText) db.groups[jid].welcomeText = '🌠 Bienvenido @user a la orbita de *@group*.'
-  if (!db.groups[jid].byeText) db.groups[jid].byeText = '🌙 @user abandono la orbita de *@group*.'
+  if (!db.groups[jid].welcomeText) db.groups[jid].welcomeText = DEFAULT_WELCOME_TEXT
+  if (!db.groups[jid].byeText) db.groups[jid].byeText = DEFAULT_BYE_TEXT
 
   return db.groups[jid]
 }

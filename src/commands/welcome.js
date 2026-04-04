@@ -20,7 +20,9 @@ export default {
     saveDB(db)
 
     await sock.sendMessage(from, {
-      text: group.welcome ? AstraText.welcomeOn : AstraText.welcomeOff
+      text: group.welcome
+        ? `${AstraText.welcomeOn}\n\n🖼️ AstraBot usara la portada astral de bienvenida al detectar nuevos tripulantes.`
+        : AstraText.welcomeOff
     })
   }
 }
