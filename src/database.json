@@ -7,6 +7,14 @@
       "muted": false,
       "antiFlood": false,
       "byeText": "adios @user, saliste de @group"
+    },
+    "120363428901278762@g.us": {
+      "antilink": false,
+      "welcome": false,
+      "welcomeText": "🌠 Bienvenido @user a la orbita de *@group*.",
+      "byeText": "🌙 @user abandono la orbita de *@group*.",
+      "muted": false,
+      "antiFlood": false
     }
   },
   "bot": {
@@ -19,18 +27,23 @@
     }
   },
   "bans": {
-    "120363426431851023@g.us": {}
+    "120363426431851023@g.us": {},
+    "120363428901278762@g.us": {}
   },
   "afk": {},
   "users": {
     "50320424083668@lid": {
       "coins": 830,
       "bank": 0,
-      "xp": 156,
+      "xp": 172,
       "level": 2,
       "lastDaily": 1775179000080,
       "lastWork": 1775179018669,
-      "lastRob": 1775179131202
+      "lastRob": 1775179131202,
+      "registered": false,
+      "regName": "",
+      "regTime": 0,
+      "inventory": {}
     },
     "16622311973103@lid": {
       "coins": 1,
@@ -39,7 +52,11 @@
       "level": 1,
       "lastDaily": 0,
       "lastWork": 0,
-      "lastRob": 0
+      "lastRob": 0,
+      "registered": false,
+      "regName": "",
+      "regTime": 0,
+      "inventory": {}
     }
   },
   "marriages": {},
