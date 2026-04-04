@@ -31,7 +31,9 @@ export default {
       await sock.sendMessage(from, { text: AstraText.setPpDone })
     } catch (e) {
       console.error('Error setppgroup:', e)
-      await sock.sendMessage(from, { text: '⚠️ No pude actualizar la imagen orbital del grupo.' })
+      await sock.sendMessage(from, {
+        text: '⚠️ No pude actualizar la imagen orbital del grupo en esta maniobra astral.'
+      })
     }
   }
 }

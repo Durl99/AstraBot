@@ -14,7 +14,9 @@ export default {
 
     if (!text) {
       return sock.sendMessage(from, {
-        text: '🧭 Usa .setbye texto. Puedes usar @user y @group'
+        text:
+          '🧭 Escribe el nuevo mensaje de despedida astral.\n' +
+          'Puedes usar *@user* para mencionar y *@group* para el nombre del grupo.'
       })
     }
 

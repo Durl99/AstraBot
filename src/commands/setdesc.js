@@ -4,7 +4,7 @@ import { AstraText } from '../astramessages.js'
 export default {
   name: 'setdesc',
   aliases: [],
-  description: 'Actualiza la descripción del grupo',
+  description: 'Actualiza la descripcion del grupo',
   category: 'moderation',
   groupOnly: true,
   adminOnly: true,
@@ -17,7 +17,7 @@ export default {
 
     const text = args.join(' ')
     if (!text) {
-      return sock.sendMessage(from, { text: AstraText.invalidUsage('.setdesc nueva descripción') })
+      return sock.sendMessage(from, { text: AstraText.invalidUsage('.setdesc nueva descripcion') })
     }
 
     await sock.groupUpdateDescription(from, text)
