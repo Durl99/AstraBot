@@ -1,3 +1,5 @@
+import { AstraText } from '../astramessages.js'
+
 export default {
   name: 'join',
   aliases: [],
@@ -10,14 +12,14 @@ export default {
     const match = link.match(/chat\.whatsapp\.com\/([A-Za-z0-9]+)/i)
 
     if (!match) {
-      return sock.sendMessage(from, { text: 'Pega un enlace válido de invitación.' })
+      return sock.sendMessage(from, { text: AstraText.joinInvalid })
     }
 
     try {
       await sock.groupAcceptInvite(match[1])
-      await sock.sendMessage(from, { text: 'Entré al grupo.' })
+      await sock.sendMessage(from, { text: AstraText.enteredGroup })
     } catch {
-      await sock.sendMessage(from, { text: 'No pude entrar con ese enlace.' })
+      await sock.sendMessage(from, { text: AstraText.joinFailed })
     }
   }
 }

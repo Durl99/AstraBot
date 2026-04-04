@@ -1,3 +1,5 @@
+import { AstraText } from '../astramessages.js'
+
 export default {
   name: 'leave',
   aliases: ['salir'],
@@ -7,7 +9,7 @@ export default {
   groupOnly: true,
   cooldown: 3,
   async run({ sock, from }) {
-    await sock.sendMessage(from, { text: 'Saliendo del grupo...' })
+    await sock.sendMessage(from, { text: AstraText.leaving })
     await sock.groupLeave(from)
   }
 }

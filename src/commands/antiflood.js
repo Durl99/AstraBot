@@ -1,10 +1,11 @@
+import { AstraText } from '../astramessages.js'
 import { ensureGroup, saveDB } from '../store.js'
 import { isBotAdmin } from '../utils.js'
 
 export default {
   name: 'antiflood',
   aliases: [],
-  description: 'Activa o desactiva el antiflood',
+  description: 'Activa o desactiva el escudo anti-flood',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -13,7 +14,7 @@ export default {
   async run({ sock, from, args, db }) {
     const value = (args[0] || '').toLowerCase()
     if (!['on', 'off'].includes(value)) {
-      return sock.sendMessage(from, { text: 'Usa .antiflood on o .antiflood off' })
+      return sock.sendMessage(from, { text: AstraText.invalidUsage('.antiflood on/off') })
     }
 
     const group = ensureGroup(db, from)
@@ -21,7 +22,7 @@ export default {
     saveDB(db)
 
     await sock.sendMessage(from, {
-      text: `Antiflood ${group.antiFlood ? 'activado' : 'desactivado'}.`
+      text: group.antiFlood ? AstraText.antifloodOn : AstraText.antifloodOff
     })
   },
 
@@ -33,7 +34,7 @@ export default {
 
     try {
       await sock.sendMessage(from, {
-        text: `🚫 Flood extremo detectado. @${sender.split('@')[0]} será expulsado.`,
+        text: AstraText.floodKick(sender.split('@')[0]),
         mentions: [sender]
       })
 

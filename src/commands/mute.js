@@ -1,9 +1,10 @@
+import { AstraText } from '../astramessages.js'
 import { ensureGroup, saveDB } from '../store.js'
 
 export default {
   name: 'mute',
   aliases: [],
-  description: 'Mutea el bot en este grupo',
+  description: 'Silencia a AstraBot en este grupo',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -12,6 +13,6 @@ export default {
     const group = ensureGroup(db, from)
     group.muted = true
     saveDB(db)
-    await sock.sendMessage(from, { text: 'AstraBot quedó muteado en este grupo.' })
+    await sock.sendMessage(from, { text: AstraText.muteOn })
   }
 }

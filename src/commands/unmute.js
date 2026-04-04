@@ -1,9 +1,10 @@
+import { AstraText } from '../astramessages.js'
 import { ensureGroup, saveDB } from '../store.js'
 
 export default {
   name: 'unmute',
   aliases: [],
-  description: 'Desmutea el bot en este grupo',
+  description: 'Reactiva a AstraBot en este grupo',
   category: 'group',
   groupOnly: true,
   adminOnly: true,
@@ -12,6 +13,6 @@ export default {
     const group = ensureGroup(db, from)
     group.muted = false
     saveDB(db)
-    await sock.sendMessage(from, { text: 'AstraBot ya no está muteado en este grupo.' })
+    await sock.sendMessage(from, { text: AstraText.muteOff })
   }
 }
