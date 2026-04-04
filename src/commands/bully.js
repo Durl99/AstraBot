@@ -1,10 +1,10 @@
 import { resolveTarget, randomChoice } from '../social.js'
 
 const lines = [
-  '😈 empezó a molestar a',
-  '🪐 no dejó respirar a',
-  '🌙 atormentó con energía astral a',
-  '💫 se burló sin piedad de'
+  'empezo a molestar sin piedad a',
+  'no dejo respirar ni un segundo a',
+  'atormento con energia astral a',
+  'se burlo sin compasion de'
 ]
 
 export default {
@@ -23,7 +23,7 @@ export default {
     }
 
     await sock.sendMessage(from, {
-      text: 😵 @${sender.split('@')[0]} ${randomChoice(lines)} @${target.split('@')[0]}.,
+      text: `😵 @${sender.split('@')[0]} ${randomChoice(lines)} @${target.split('@')[0]}.`,
       mentions: [sender, target]
     }, { quoted: msg })
   }

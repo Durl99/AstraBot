@@ -1,16 +1,16 @@
 import { resolveTarget, randomChoice } from '../social.js'
 
 const lines = [
-  '☄️ lanzó a',
-  '💥 vaporizó a',
-  '🪐 expulsó brutalmente a',
-  '🌌 eliminó simbólicamente a'
+  'lanzo al vacio cosmico a',
+  'vaporizo dramaticamente a',
+  'expulso del plano estelar a',
+  'elimino simbolicamente a'
 ]
 
 export default {
   name: 'kill',
   aliases: ['matar'],
-  description: 'Mata en broma a alguien',
+  description: 'Elimina en broma a alguien',
   category: 'fun',
   cooldown: 4,
   async run({ sock, from, sender, msg }) {
@@ -23,7 +23,7 @@ export default {
     }
 
     await sock.sendMessage(from, {
-      text: 💀 @${sender.split('@')[0]} ${randomChoice(lines)} @${target.split('@')[0]} del plano astral.,
+      text: `💀 @${sender.split('@')[0]} ${randomChoice(lines)} @${target.split('@')[0]}.`,
       mentions: [sender, target]
     }, { quoted: msg })
   }
