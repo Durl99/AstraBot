@@ -103,6 +103,7 @@ export function ensureUser(db, userId) {
       lastWork: 0,
       lastRob: 0,
       lastChest: 0,
+      lastEvent: 0,
       achievements: {},
       missions: {},
       stats: {},
@@ -123,6 +124,7 @@ export function ensureUser(db, userId) {
   if (typeof user.lastWork !== 'number') user.lastWork = 0
   if (typeof user.lastRob !== 'number') user.lastRob = 0
   if (typeof user.lastChest !== 'number') user.lastChest = 0
+  if (typeof user.lastEvent !== 'number') user.lastEvent = 0
   if (!user.achievements || typeof user.achievements !== 'object') user.achievements = {}
   if (!user.missions || typeof user.missions !== 'object') user.missions = {}
   if (!user.stats || typeof user.stats !== 'object') user.stats = {}
