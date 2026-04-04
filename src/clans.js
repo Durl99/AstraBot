@@ -142,3 +142,54 @@ export function getClanTop(db) {
     }))
     .sort((a, b) => b.power - a.power)
 }
+
+export function transferClanLeadership(db, sender, targetJid) {
+  const user = ensureUser(db, sender)
+  if (!user.clanId) {
+    return { error: 'No perteneces a ningun clan astral.' }
+  }
+
+  const clan = getClan(db, user.clanId)
+  if (!clan) {
+    return { error: 'Tu clan no pudo ser localizado en la base astral.' }
+  }
+
+  if (clan.leader !== sender) {
+    return { error: 'Solo el lider puede transferir el mando del clan.' }
+  }
+
+  if (!clan.members.includes(targetJid)) {
+    return { error: 'Ese objetivo no forma parte de tu clan.' }
+  }
+
+  clan.leader = targetJid
+  saveDB(db)
+  return { clan }
+}
+
+export function disbandClan(db, sender) {
+  const user = ensureUser(db, sender)
+  if (!user.clanId) {
+    return { error: 'No perteneces a ningun clan astral.' }
+  }
+
+  const clan = getClan(db, user.clanId)
+  if (!clan) {
+    user.clanId = null
+    saveDB(db)
+    return { error: 'Tu clan ya no existia. Se limpio tu vinculo astral.' }
+  }
+
+  if (clan.leader !== sender) {
+    return { error: 'Solo el lider puede disolver el clan.' }
+  }
+
+  for (const member of clan.members) {
+    const target = ensureUser(db, member)
+    target.clanId = null
+  }
+
+  delete db.clans[clan.id]
+  saveDB(db)
+  return { clan }
+}

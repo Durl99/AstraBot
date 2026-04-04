@@ -1,4 +1,4 @@
-import { getBoss, getBossTop, summonBoss } from '../boss.js'
+import { getBoss, getBossClanTop, getBossTop, summonBoss } from '../boss.js'
 
 export default {
   name: 'boss',
@@ -36,6 +36,7 @@ export default {
     }
 
     const top = getBossTop(boss)
+    const clanTop = getBossClanTop(db, boss)
     const lines = [
       `${boss.emoji} *RAID ASTRAL EN CURSO*`,
       '',
@@ -45,6 +46,10 @@ export default {
       top.length
         ? top.map((entry, index) => `${index + 1}. @${entry.jid.split('@')[0]} - *${entry.damage}* daño`).join('\n')
         : 'Aun nadie ha golpeado al boss.',
+      '',
+      clanTop.length
+        ? '🏳️ Clanes en combate:\n' + clanTop.map((entry, index) => `${index + 1}. *${entry.clanName}* - *${entry.damage}* daño`).join('\n')
+        : 'Aun no hay clanes participando en este raid.',
       '',
       '⚔️ Usa *.attackboss* para sumarte al combate.'
     ]

@@ -1,4 +1,5 @@
-import { createClan, donateClan, getClan, getClanTop, joinClan, leaveClan } from '../clans.js'
+import { createClan, disbandClan, donateClan, getClan, getClanTop, joinClan, leaveClan, transferClanLeadership } from '../clans.js'
+import { getTargetUser } from '../utils.js'
 import { ensureUser } from '../store.js'
 
 export default {
@@ -20,6 +21,8 @@ export default {
           '• *.clan info*\n' +
           '• *.clan miembros*\n' +
           '• *.clan donar 500*\n' +
+          '• *.clan lider @usuario*\n' +
+          '• *.clan disolver*\n' +
           '• *.clan top*\n' +
           '• *.clan salir*'
       }, { quoted: msg })
@@ -81,6 +84,36 @@ export default {
           `Clan: *${result.clan.name}*\n` +
           `Cantidad: *${result.amount}* coins\n` +
           `Banco del clan: *${result.clan.bank}*`
+      }, { quoted: msg })
+    }
+
+    if (action === 'lider' || action === 'transferir') {
+      const target = getTargetUser(msg)
+      if (!target) {
+        return sock.sendMessage(from, {
+          text: '🧭 Menciona o responde al miembro que recibira el mando del clan.'
+        }, { quoted: msg })
+      }
+
+      const result = transferClanLeadership(db, sender, target)
+      if (result.error) {
+        return sock.sendMessage(from, { text: `⚠️ ${result.error}` }, { quoted: msg })
+      }
+
+      return sock.sendMessage(from, {
+        text: `👑 El liderazgo del clan *${result.clan.name}* fue transferido a @${target.split('@')[0]}.`,
+        mentions: [target]
+      }, { quoted: msg })
+    }
+
+    if (action === 'disolver') {
+      const result = disbandClan(db, sender)
+      if (result.error) {
+        return sock.sendMessage(from, { text: `⚠️ ${result.error}` }, { quoted: msg })
+      }
+
+      return sock.sendMessage(from, {
+        text: `🌑 El clan *${result.clan.name}* fue disuelto y su señal se disperso en la galaxia.`
       }, { quoted: msg })
     }
 

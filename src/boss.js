@@ -1,3 +1,5 @@
+import { addItem } from './economy.js'
+import { getClan } from './clans.js'
 import { ensureGroup, ensureUser, saveDB } from './store.js'
 
 const BOSSES = [
@@ -54,7 +56,8 @@ export function attackBoss(db, groupId, sender) {
   const now = Date.now()
   const participant = boss.participants[sender] || {
     damage: 0,
-    lastAttack: 0
+    lastAttack: 0,
+    clanId: user.clanId || null
   }
 
   const cooldownMs = 45 * 1000
@@ -67,6 +70,9 @@ export function attackBoss(db, groupId, sender) {
   boss.hp = Math.max(0, boss.hp - damage)
   participant.lastAttack = now
   participant.damage += damage
+  if (!participant.clanId && user.clanId) {
+    participant.clanId = user.clanId
+  }
   boss.participants[sender] = participant
 
   const result = {
@@ -88,12 +94,30 @@ export function attackBoss(db, groupId, sender) {
       const player = ensureUser(db, jid)
       player.coins += reward
       player.xp += Math.max(25, Math.floor(data.damage / 8))
+
+      if (data.clanId) {
+        const clan = getClan(db, data.clanId)
+        if (clan) {
+          clan.bank += Math.max(20, Math.floor(reward * 0.15))
+          clan.xp += Math.max(10, Math.floor(data.damage / 12))
+        }
+      }
+
       return {
         jid,
         damage: data.damage,
         reward
       }
     })
+
+    result.drop = Math.random() < 0.5
+      ? { itemKey: 'crate', qty: 1, winner: result.rewards[0]?.jid || sender }
+      : { itemKey: 'crystal', qty: 1, winner: result.rewards[0]?.jid || sender }
+
+    if (result.drop.winner) {
+      const winner = ensureUser(db, result.drop.winner)
+      addItem(winner, result.drop.itemKey, result.drop.qty)
+    }
   }
 
   saveDB(db)
@@ -102,7 +126,28 @@ export function attackBoss(db, groupId, sender) {
 
 export function getBossTop(boss, limit = 5) {
   return Object.entries(boss?.participants || {})
-    .map(([jid, data]) => ({ jid, damage: data.damage }))
+    .map(([jid, data]) => ({ jid, damage: data.damage, clanId: data.clanId || null }))
+    .sort((a, b) => b.damage - a.damage)
+    .slice(0, limit)
+}
+
+export function getBossClanTop(db, boss, limit = 3) {
+  const totals = new Map()
+
+  for (const [, data] of Object.entries(boss?.participants || {})) {
+    if (!data.clanId) continue
+    totals.set(data.clanId, (totals.get(data.clanId) || 0) + data.damage)
+  }
+
+  return [...totals.entries()]
+    .map(([clanId, damage]) => {
+      const clan = getClan(db, clanId)
+      return {
+        clanId,
+        clanName: clan?.name || 'Clan desconocido',
+        damage
+      }
+    })
     .sort((a, b) => b.damage - a.damage)
     .slice(0, limit)
 }
