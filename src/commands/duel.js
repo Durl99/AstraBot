@@ -45,11 +45,11 @@ export default {
 
     await sock.sendMessage(from, {
       text:
-        '⚔️ DUELO ASTRAL\n\n' +
-        Apuesta: *${amount}* coins\n +
-        Ganador: @${winner.split('@')[0]}\n +
-        Perdedor: @${loser.split('@')[0]}\n\n +
-        'La órbita eligió a su campeón.',
+        `⚔️ *DUELO ASTRAL*\n\n` +
+        `Apuesta: *${amount}* coins\n` +
+        `Ganador: @${winner.split('@')[0]}\n` +
+        `Perdedor: @${loser.split('@')[0]}\n\n` +
+        'La orbita eligio a su campeon.',
       mentions: [winner, loser]
     }, { quoted: msg })
   }

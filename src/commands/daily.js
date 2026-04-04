@@ -6,16 +6,19 @@ function formatTime(ms) {
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
   const parts = []
-  if (h) parts.push(${h}h)
-  if (m) parts.push(${m}m)
-  if (sec || !parts.length) parts.push(${sec}s)
+  if (h) parts.push(`${h}h`)
+  if (m) parts.push(`${m}m`)
+  if (sec || !parts.length) parts.push(`${sec}s`)
   return parts.join(' ')
 }
 
 const rewardTexts = [
-  amount => 🌠 *RECOMPENSA DIARIA ASTRAL*\n\nLa constelación te favoreció con *${amount}* coins.\nVuelve mañana por otra carga cósmica.,
-  amount => 🪐 *PAGO ORBITAL RECIBIDO*\n\nAstraBot transfirió *${amount}* coins a tu cartera.\nLa órbita reconoce tu presencia.,
-  amount => ✨ *BONO CÓSMICO*\n\nRecibiste *${amount}* coins por mantener tu señal activa dentro de la galaxia.
+  amount =>
+    `🌠 *RECOMPENSA DIARIA ASTRAL*\n\nLa constelacion te favorecio con *${amount}* coins.\nVuelve mañana por otra carga cosmica.`,
+  amount =>
+    `🪐 *PAGO ORBITAL RECIBIDO*\n\nAstraBot transfirio *${amount}* coins a tu cartera.\nLa orbita reconoce tu presencia.`,
+  amount =>
+    `✨ *BONO COSMICO*\n\nRecibiste *${amount}* coins por mantener tu señal activa dentro de la galaxia.`
 ]
 
 export default {
@@ -32,9 +35,7 @@ export default {
 
     if (left > 0) {
       return sock.sendMessage(from, {
-        text:
-          '⌛ RECOMPENSA EN RECARGA\n\n' +
-          Debes esperar *${formatTime(left)}* para volver a reclamar tu daily.
+        text: `⌛ *RECOMPENSA EN RECARGA*\n\nDebes esperar *${formatTime(left)}* para volver a reclamar tu daily.`
       }, { quoted: msg })
     }
 
