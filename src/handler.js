@@ -64,6 +64,19 @@ function formatDuration(ms) {
   return parts.join(' ')
 }
 
+function formatCommandDebug(error) {
+  const message = error?.message || String(error || 'Unknown error')
+  const firstStackLine = String(error?.stack || '')
+    .split('\n')
+    .map(line => line.trim())
+    .find(line => line && !line.toLowerCase().startsWith('error:'))
+
+  return [
+    `mensaje=${message}`,
+    firstStackLine ? `stack=${firstStackLine}` : null
+  ].filter(Boolean).join('\n')
+}
+
 function addXp(db, sender, amount = 5) {
   const user = ensureUser(db, sender)
   user.xp += amount
@@ -275,6 +288,12 @@ export async function handleMessage({ sock, msg, commands, db }) {
     }
   } catch (error) {
     console.error(`Error en ${command.name}:`, error)
-    await sock.sendMessage(from, { text: AstraText.error })
+    await sock.sendMessage(from, {
+      text:
+        `${AstraText.error}\n\n` +
+        `DEBUG\n` +
+        `comando=${command.name}\n` +
+        `${formatCommandDebug(error)}`
+    }, { quoted: msg })
   }
 }

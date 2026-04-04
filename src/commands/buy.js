@@ -1,5 +1,6 @@
 import { ensureUser, saveDB } from '../store.js'
 import { getShopItem, addItem } from '../economy.js'
+import { recordProgressAction } from '../progression.js'
 
 export default {
   name: 'buy',
@@ -29,6 +30,7 @@ export default {
 
     user.coins -= total
     addItem(user, item.key, qty)
+    const unlocked = recordProgressAction(user, 'buy', { qty })
     saveDB(db)
 
     await sock.sendMessage(from, {
@@ -38,5 +40,11 @@ export default {
         `💸 Gastaste *${total}* coins\n` +
         `🪙 Coins restantes: *${user.coins}*`
     })
+
+    if (unlocked.length) {
+      await sock.sendMessage(from, {
+        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+      })
+    }
   }
 }

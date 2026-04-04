@@ -54,6 +54,8 @@ export function ensureGroup(db, jid) {
   if (!db.groups[jid]) {
     db.groups[jid] = {
       antilink: false,
+      antilinkMode: 'kick',
+      antidelete: false,
       welcome: false,
       welcomeText: DEFAULT_WELCOME_TEXT,
       bye: false,
@@ -64,6 +66,8 @@ export function ensureGroup(db, jid) {
   }
 
   if (typeof db.groups[jid].antilink !== 'boolean') db.groups[jid].antilink = false
+  if (!['kick', 'warn'].includes(db.groups[jid].antilinkMode)) db.groups[jid].antilinkMode = 'kick'
+  if (typeof db.groups[jid].antidelete !== 'boolean') db.groups[jid].antidelete = false
   if (typeof db.groups[jid].welcome !== 'boolean') db.groups[jid].welcome = false
   if (typeof db.groups[jid].bye !== 'boolean') db.groups[jid].bye = false
   if (typeof db.groups[jid].muted !== 'boolean') db.groups[jid].muted = false
@@ -98,6 +102,10 @@ export function ensureUser(db, userId) {
       lastDaily: 0,
       lastWork: 0,
       lastRob: 0,
+      lastChest: 0,
+      achievements: {},
+      missions: {},
+      stats: {},
       inventory: {}
     }
   }
@@ -114,6 +122,10 @@ export function ensureUser(db, userId) {
   if (typeof user.lastDaily !== 'number') user.lastDaily = 0
   if (typeof user.lastWork !== 'number') user.lastWork = 0
   if (typeof user.lastRob !== 'number') user.lastRob = 0
+  if (typeof user.lastChest !== 'number') user.lastChest = 0
+  if (!user.achievements || typeof user.achievements !== 'object') user.achievements = {}
+  if (!user.missions || typeof user.missions !== 'object') user.missions = {}
+  if (!user.stats || typeof user.stats !== 'object') user.stats = {}
   if (!user.inventory || typeof user.inventory !== 'object') user.inventory = {}
 
   return user

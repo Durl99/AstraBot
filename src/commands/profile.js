@@ -1,6 +1,6 @@
 import { ensureUser, saveDB } from '../store.js'
-import { AstraText } from '../astramessages.js'
 import { getTargetUser } from '../utils.js'
+import { getAchievementEntries, getAstralRank, getTotalWealth, syncDailyMissions } from '../progression.js'
 
 export default {
   name: 'profile',
@@ -14,8 +14,10 @@ export default {
 
     const partnerJid = db.marriages?.[target] || null
     const proposal = db.proposals?.[target] || null
-
     const partner = partnerJid ? `@${partnerJid.split('@')[0]}` : 'Ninguna'
+    const rank = getAstralRank(user)
+    const unlockedAchievements = getAchievementEntries(user).filter(entry => entry.unlocked).length
+    const missions = syncDailyMissions(user)
 
     let proposalText = 'Ninguna'
     if (proposal) {
@@ -32,10 +34,18 @@ export default {
     if (proposal && Date.now() <= proposal.expiresAt) mentions.push(proposal.from)
 
     await sock.sendMessage(from, {
-      text: AstraText.profile(target, user, {
-        partner,
-        proposal: proposalText
-      }),
+      text:
+        `🌌 *PERFIL ASTRAL DE @${target.split('@')[0]}*\n\n` +
+        `🌠 Rango: ${rank.emoji} *${rank.name}*\n` +
+        `🎖️ Nivel: *${user.level}*\n` +
+        `✨ XP: *${user.xp}*\n` +
+        `💸 Coins: *${user.coins}*\n` +
+        `🏦 Banco: *${user.bank}*\n` +
+        `🫧 Total orbital: *${getTotalWealth(user)}*\n` +
+        `🏆 Logros: *${unlockedAchievements}*\n` +
+        `🛰️ Misiones de hoy: *${missions.filter(m => m.claimed).length}/${missions.length}* reclamadas\n` +
+        `💞 Pareja: *${partner}*\n` +
+        `📡 Propuesta: *${proposalText}*`,
       mentions
     })
   }

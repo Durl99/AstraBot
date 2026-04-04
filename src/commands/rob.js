@@ -1,6 +1,7 @@
 import { ensureUser, saveDB } from '../store.js'
 import { AstraText } from '../astramessages.js'
 import { getTargetUser } from '../utils.js'
+import { recordProgressAction } from '../progression.js'
 
 function formatTime(ms) {
   const s = Math.ceil(ms / 1000)
@@ -52,13 +53,26 @@ export default {
       const amount = Math.min(victim.coins, Math.floor(Math.random() * 151) + 50)
       victim.coins -= amount
       user.coins += amount
+      const unlocked = recordProgressAction(user, 'rob', { success: true })
       saveDB(db)
-      return sock.sendMessage(from, { text: AstraText.robSuccess(amount) })
+      await sock.sendMessage(from, { text: AstraText.robSuccess(amount) })
+      if (unlocked.length) {
+        await sock.sendMessage(from, {
+          text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+        })
+      }
+      return
     }
 
     const penalty = Math.min(user.coins, Math.floor(Math.random() * 81) + 20)
     user.coins -= penalty
+    const unlocked = recordProgressAction(user, 'rob', { success: false })
     saveDB(db)
     await sock.sendMessage(from, { text: AstraText.robFail(penalty) })
+    if (unlocked.length) {
+      await sock.sendMessage(from, {
+        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+      })
+    }
   }
 }

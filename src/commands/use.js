@@ -1,5 +1,6 @@
 import { ensureUser, saveDB } from '../store.js'
 import { getShopItem, getInventoryAmount, removeItem } from '../economy.js'
+import { recordProgressAction } from '../progression.js'
 
 function giveXp(user, amount) {
   user.xp += amount
@@ -73,6 +74,7 @@ export default {
       })
     }
 
+    const unlocked = recordProgressAction(user, 'use', { qty: 1 })
     saveDB(db)
 
     if (levelUps > 0) {
@@ -80,5 +82,11 @@ export default {
     }
 
     await sock.sendMessage(from, { text })
+
+    if (unlocked.length) {
+      await sock.sendMessage(from, {
+        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+      })
+    }
   }
 }

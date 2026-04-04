@@ -1,4 +1,5 @@
 import { ensureUser } from '../store.js'
+import { getAstralRank } from '../progression.js'
 import { AstraText } from '../astramessages.js'
 
 export default {
@@ -25,7 +26,8 @@ export default {
           xp: user.xp || 0,
           coins: user.coins || 0,
           bank: user.bank || 0,
-          total: (user.coins || 0) + (user.bank || 0)
+          total: (user.coins || 0) + (user.bank || 0),
+          rank: getAstralRank(user)
         }
       })
       .sort((a, b) => {
@@ -36,11 +38,11 @@ export default {
       .slice(0, 10)
 
     const lines = [
-      AstraText.leaderboardTitle,
+      '🌌 *TOP GALACTICO ASTRABOT*',
       '',
       ...ranking.map(
         (user, i) =>
-          `${i + 1}. @${user.jid.split('@')[0]}\n🪙 Total: *${user.total}* | 💠 Nivel: *${user.level}*`
+          `${i + 1}. @${user.jid.split('@')[0]}\n🪙 Total: *${user.total}* | 🎖️ Nivel: *${user.level}*\n${user.rank.emoji} Rango: *${user.rank.name}*`
       )
     ]
 

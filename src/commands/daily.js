@@ -1,4 +1,5 @@
 import { ensureUser, saveDB } from '../store.js'
+import { recordProgressAction } from '../progression.js'
 
 function formatTime(ms) {
   const s = Math.ceil(ms / 1000)
@@ -42,10 +43,16 @@ export default {
     const amount = Math.floor(Math.random() * 201) + 250
     user.coins += amount
     user.lastDaily = now
+    const unlocked = recordProgressAction(user, 'daily')
     saveDB(db)
 
     const text = rewardTexts[Math.floor(Math.random() * rewardTexts.length)](amount)
-
     await sock.sendMessage(from, { text }, { quoted: msg })
+
+    if (unlocked.length) {
+      await sock.sendMessage(from, {
+        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+      }, { quoted: msg })
+    }
   }
 }

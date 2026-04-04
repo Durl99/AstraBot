@@ -1,4 +1,5 @@
 import { ensureUser, saveDB } from '../store.js'
+import { recordProgressAction } from '../progression.js'
 
 function formatTime(ms) {
   const s = Math.ceil(ms / 1000)
@@ -44,10 +45,17 @@ export default {
 
     user.coins += amount
     user.lastWork = now
+    const unlocked = recordProgressAction(user, 'work')
     saveDB(db)
 
     await sock.sendMessage(from, {
       text: `🛠️ *TRABAJO COMPLETADO*\n\nTrabajaste como *${job}* y ganaste *${amount}* coins.\n🌌 AstraBot registro tu jornada orbital.`
     }, { quoted: msg })
+
+    if (unlocked.length) {
+      await sock.sendMessage(from, {
+        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+      }, { quoted: msg })
+    }
   }
 }

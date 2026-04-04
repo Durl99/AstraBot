@@ -2,6 +2,7 @@ import 'dotenv/config'
 
 export const config = {
   botName: process.env.BOT_NAME || 'AstraBot',
+  instanceName: process.env.INSTANCE_NAME || 'local',
   prefix: process.env.PREFIX || '.',
   owner: (process.env.OWNER_NUMBER || '')
     .split(',')

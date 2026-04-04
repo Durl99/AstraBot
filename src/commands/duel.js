@@ -1,5 +1,6 @@
 import { ensureUser, saveDB } from '../store.js'
 import { getTargetUser } from '../utils.js'
+import { recordProgressAction } from '../progression.js'
 
 export default {
   name: 'duel',
@@ -41,6 +42,7 @@ export default {
 
     loseUser.coins -= amount
     winUser.coins += amount
+    const unlocked = recordProgressAction(winUser, 'duel_win')
     saveDB(db)
 
     await sock.sendMessage(from, {
@@ -52,5 +54,11 @@ export default {
         'La orbita eligio a su campeon.',
       mentions: [winner, loser]
     }, { quoted: msg })
+
+    if (unlocked.length) {
+      await sock.sendMessage(from, {
+        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+      }, { quoted: msg })
+    }
   }
 }

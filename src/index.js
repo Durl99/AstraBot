@@ -10,6 +10,8 @@ import express from 'express'
 import QRCode from 'qrcode'
 
 import { loadCommands, handleMessage } from './handler.js'
+import { handleDeletedMessage, rememberMessage } from './antidelete.js'
+import { config } from './config.js'
 import { loadDB, saveDB } from './store.js'
 import { handleGroupParticipantsUpdate } from './groupwelcome.js'
 
@@ -21,6 +23,81 @@ const PORT = process.env.PORT || 3000
 let latestQR = null
 let qrImageDataUrl = null
 let botStatus = 'starting'
+
+let currentSock = null
+let starting = false
+let reconnectTimer = null
+let saveInterval = null
+
+const db = loadDB()
+const commandsPromise = loadCommands()
+
+function getDisconnectReasonName(statusCode) {
+  const reasonName = Object.entries(DisconnectReason).find(([, value]) => value === statusCode)?.[0]
+  return reasonName || 'unknown'
+}
+
+function getDisconnectExplanation(statusCode) {
+  switch (statusCode) {
+    case DisconnectReason.connectionReplaced:
+      return 'Otra instancia tomo esta sesion.'
+    case DisconnectReason.loggedOut:
+      return 'La sesion fue cerrada y necesita nueva vinculacion.'
+    case DisconnectReason.connectionClosed:
+      return 'La conexion se cerro de forma inesperada.'
+    case DisconnectReason.connectionLost:
+      return 'La conexion con WhatsApp se perdio.'
+    case DisconnectReason.timedOut:
+      return 'La conexion expiro por tiempo.'
+    case DisconnectReason.badSession:
+      return 'La sesion guardada parece invalida.'
+    case DisconnectReason.restartRequired:
+      return 'WhatsApp pidio reiniciar la conexion.'
+    case DisconnectReason.multideviceMismatch:
+      return 'La cuenta no coincide con el modo multidispositivo esperado.'
+    case DisconnectReason.forbidden:
+      return 'WhatsApp rechazo la conexion.'
+    case DisconnectReason.unavailableService:
+      return 'El servicio de WhatsApp no estaba disponible.'
+    default:
+      return 'Motivo no identificado por Baileys.'
+  }
+}
+
+function getDisconnectAction(statusCode, shouldReconnect) {
+  if (statusCode === DisconnectReason.connectionReplaced) {
+    return 'Cierra la otra instancia de AstraBot si quieres usar esta.'
+  }
+
+  if (statusCode === DisconnectReason.loggedOut) {
+    return 'Borra src/sessions y vuelve a vincular el bot.'
+  }
+
+  if (shouldReconnect) {
+    return 'AstraBot intentara reconectar automaticamente.'
+  }
+
+  return 'Revisa la sesion y el estado de la conexion.'
+}
+
+function clearReconnectTimer() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+}
+
+function scheduleReconnect(delayMs = 3000) {
+  if (reconnectTimer) return
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    startBot().catch(err => {
+      console.error('Error reiniciando AstraBot:', err)
+      scheduleReconnect(5000)
+    })
+  }, delayMs)
+}
 
 app.get('/', async (req, res) => {
   try {
@@ -58,7 +135,7 @@ app.get('/', async (req, res) => {
         <body>
           <div class="card">
             <h1>🚀 AstraBot conectado</h1>
-            <p>La señal astral está estable.</p>
+            <p>La señal astral esta estable.</p>
           </div>
         </body>
         </html>
@@ -126,7 +203,7 @@ app.get('/', async (req, res) => {
             <h1>🪐 AstraBot QR</h1>
             <p>Escanea este QR con el WhatsApp del bot.</p>
             <img src="${qrImageDataUrl}" alt="QR AstraBot" />
-            <div class="warn">Esta página solo debería usarse temporalmente mientras vinculas el bot.</div>
+            <div class="warn">Esta pagina solo deberia usarse temporalmente mientras vinculas el bot.</div>
           </div>
         </body>
         </html>
@@ -164,7 +241,7 @@ app.get('/', async (req, res) => {
       <body>
         <div class="card">
           <h1>🌌 AstraBot</h1>
-          <p>Generando QR o esperando conexión...</p>
+          <p>Generando QR o esperando conexion...</p>
         </div>
       </body>
       </html>
@@ -183,100 +260,155 @@ app.get('/health', (req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`🌐 Web temporal activa en puerto ${PORT}`)
+  console.log(`🌐 Web temporal activa en puerto ${PORT} | instancia=${config.instanceName} | host=${process.env.HOSTNAME || process.env.COMPUTERNAME || 'desconocido'} | pid=${process.pid}`)
 })
 
-const startBot = async () => {
-  const { state, saveCreds } = await useMultiFileAuthState('./src/sessions')
-  const { version } = await fetchLatestBaileysVersion()
+async function startBot() {
+  if (starting) return
+  starting = true
+  clearReconnectTimer()
 
-  const sock = makeWASocket({
-    version,
-    logger,
-    printQRInTerminal: false,
-    auth: state,
-    browser: ['AstraBot', 'Chrome', '1.0.0']
-  })
-
-  const db = loadDB()
-  const commands = await loadCommands()
-
-  sock.ev.on('creds.update', saveCreds)
-
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update
-
-    if (qr) {
-      latestQR = qr
-      qrImageDataUrl = await QRCode.toDataURL(qr, {
-        width: 320,
-        margin: 2
-      })
-      botStatus = 'qr'
-      console.log('📱 QR generado. Ábrelo desde la web del servicio.')
-    }
-
-    if (connection === 'open') {
-      botStatus = 'connected'
-      latestQR = null
-      qrImageDataUrl = null
-      console.log('✅ AstraBot conectado')
-    }
-
-    if (connection === 'close') {
-      botStatus = 'disconnected'
-
-      const statusCode =
-        lastDisconnect?.error instanceof Boom
-          ? lastDisconnect.error.output.statusCode
-          : undefined
-
-      const shouldReconnect = statusCode !== DisconnectReason.loggedOut
-
-      console.log('❌ Conexión cerrada. Código:', statusCode, 'Reconectar:', shouldReconnect)
-
-      if (shouldReconnect) {
-        startBot()
-      } else {
-        console.log('🚫 Sesión cerrada. Borra src/sessions y vuelve a vincular.')
+  try {
+    if (currentSock) {
+      try {
+        currentSock.ev.removeAllListeners('connection.update')
+        currentSock.ev.removeAllListeners('messages.upsert')
+        currentSock.ev.removeAllListeners('group-participants.update')
+        currentSock.ev.removeAllListeners('creds.update')
+        currentSock.end?.(undefined)
+      } catch {
+        // Ignoro errores de cierre en sockets viejos.
       }
+      currentSock = null
     }
-  })
 
-  sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return
+    const { state, saveCreds } = await useMultiFileAuthState('./src/sessions')
+    const { version } = await fetchLatestBaileysVersion()
+    const commands = await commandsPromise
 
-    const msg = messages[0]
-    if (!msg?.message) return
-    if (msg.key?.remoteJid === 'status@broadcast') return
+    const sock = makeWASocket({
+      version,
+      logger,
+      printQRInTerminal: false,
+      auth: state,
+      browser: ['AstraBot', 'Chrome', '1.0.0']
+    })
 
-    try {
-      await handleMessage({
-        sock,
-        msg,
-        commands,
-        db
-      })
-    } catch (err) {
-      console.error('Error manejando mensaje:', err)
+    currentSock = sock
+
+    sock.ev.on('creds.update', saveCreds)
+
+    sock.ev.on('connection.update', async (update) => {
+      if (sock !== currentSock) return
+
+      const { connection, lastDisconnect, qr } = update
+
+      if (qr) {
+        latestQR = qr
+        qrImageDataUrl = await QRCode.toDataURL(qr, {
+          width: 320,
+          margin: 2
+        })
+        botStatus = 'qr'
+        console.log('📱 QR generado. Abrelo desde la web del servicio.')
+      }
+
+      if (connection === 'open') {
+        botStatus = 'connected'
+        latestQR = null
+        qrImageDataUrl = null
+        clearReconnectTimer()
+        console.log('✅ AstraBot conectado')
+      }
+
+      if (connection === 'close') {
+        botStatus = 'disconnected'
+
+        const statusCode =
+          lastDisconnect?.error instanceof Boom
+            ? lastDisconnect.error.output.statusCode
+            : undefined
+
+        const shouldReconnect =
+          statusCode !== DisconnectReason.loggedOut &&
+          statusCode !== DisconnectReason.connectionReplaced
+
+        const reasonName = getDisconnectReasonName(statusCode)
+        const explanation = getDisconnectExplanation(statusCode)
+        const action = getDisconnectAction(statusCode, shouldReconnect)
+
+        console.log(
+          `❌ Conexion cerrada | codigo=${statusCode ?? 'unknown'} | motivo=${reasonName} | reconectar=${shouldReconnect}`
+        )
+        console.log(`🧭 Causa: ${explanation}`)
+        console.log(`🛠️ Accion: ${action}`)
+
+        if (statusCode === DisconnectReason.connectionReplaced) {
+          currentSock = null
+        } else if (shouldReconnect) {
+          currentSock = null
+          scheduleReconnect(statusCode === 440 ? 5000 : 3000)
+        } else {
+          console.log('🚫 Sesion cerrada. Borra src/sessions y vuelve a vincular.')
+        }
+      }
+    })
+
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (sock !== currentSock) return
+      if (type !== 'notify') return
+
+      const msg = messages[0]
+      if (!msg?.message) return
+      if (msg.key?.remoteJid === 'status@broadcast') return
+
+      rememberMessage(msg)
+
+      if (msg.message?.protocolMessage?.key) {
+        try {
+          await handleDeletedMessage({ sock, msg, db })
+        } catch (err) {
+          console.error('Error manejando antidelete:', err)
+        }
+      }
+
+      try {
+        await handleMessage({
+          sock,
+          msg,
+          commands,
+          db
+        })
+      } catch (err) {
+        console.error('Error manejando mensaje:', err)
+      }
+    })
+
+    sock.ev.on('group-participants.update', async (update) => {
+      if (sock !== currentSock) return
+
+      try {
+        await handleGroupParticipantsUpdate({
+          sock,
+          update,
+          db
+        })
+      } catch (err) {
+        console.error('Error manejando bienvenida/despedida:', err)
+      }
+    })
+
+    if (!saveInterval) {
+      saveInterval = setInterval(() => {
+        saveDB(db)
+      }, 30000)
     }
-  })
-
-  sock.ev.on('group-participants.update', async (update) => {
-    try {
-      await handleGroupParticipantsUpdate({
-        sock,
-        update,
-        db
-      })
-    } catch (err) {
-      console.error('Error manejando bienvenida/despedida:', err)
-    }
-  })
-
-  setInterval(() => {
-    saveDB(db)
-  }, 30000)
+  } finally {
+    starting = false
+  }
 }
 
-startBot()
+startBot().catch(err => {
+  console.error('Error iniciando AstraBot:', err)
+  scheduleReconnect(5000)
+})
