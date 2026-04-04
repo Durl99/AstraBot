@@ -1,9 +1,10 @@
 import { ensureUser } from '../store.js'
+import { AstraText } from '../astramessages.js'
 
 export default {
   name: 'leaderboard',
   aliases: ['top', 'lb'],
-  description: 'Muestra el top galáctico de riqueza y nivel',
+  description: 'Muestra el top galactico de riqueza y nivel',
   category: 'fun',
   cooldown: 5,
   async run({ sock, from, db }) {
@@ -11,7 +12,7 @@ export default {
 
     if (!users.length) {
       return sock.sendMessage(from, {
-        text: '🌌 Aún no hay datos suficientes en la galaxia para formar un leaderboard.'
+        text: AstraText.leaderboardEmpty
       })
     }
 
@@ -35,10 +36,11 @@ export default {
       .slice(0, 10)
 
     const lines = [
-      '🏆 *LEADERBOARD GALÁCTICO*',
+      AstraText.leaderboardTitle,
       '',
-      ...ranking.map((user, i) =>
-        `${i + 1}. @${user.jid.split('@')[0]}\n🪙 Total: *${user.total}* | 💠 Nivel: *${user.level}*`
+      ...ranking.map(
+        (user, i) =>
+          `${i + 1}. @${user.jid.split('@')[0]}\n🪙 Total: *${user.total}* | 💠 Nivel: *${user.level}*`
       )
     ]
 

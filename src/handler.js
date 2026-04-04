@@ -221,10 +221,7 @@ export async function handleMessage({ sock, msg, commands, db }) {
   const noRegisterNeeded = ['register', 'unregister']
   if (!senderUser.registered && !userIsOwner && !noRegisterNeeded.includes(command.name)) {
     return sock.sendMessage(from, {
-      text:
-        '🌌 *ACCESO RESTRINGIDO*\n\n' +
-        'Para usar AstraBot debes registrarte primero.\n' +
-        'Usa: *.register TuNombre*'
+      text: AstraText.registerRequired
     }, { quoted: msg })
   }
 
@@ -273,7 +270,7 @@ export async function handleMessage({ sock, msg, commands, db }) {
 
     if (xpResult?.leveledUp) {
       await sock.sendMessage(from, {
-        text: `🌠 Ascendiste de nivel. Ahora estás en *nivel ${xpResult.user.level}* y recibiste *50* coins astrales.`
+        text: AstraText.levelUp(xpResult.user.level)
       }, { quoted: msg })
     }
   } catch (error) {

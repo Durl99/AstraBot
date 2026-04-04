@@ -12,8 +12,8 @@ export default {
     if (user.registered) {
       return sock.sendMessage(from, {
         text:
-          '✨ *YA ESTÁS REGISTRADO*\n\n' +
-          `Nombre astral: *${user.regName || 'Sin nombre'}*`
+          '✨ *YA ESTAS REGISTRADO EN ASTRA BOT*\n\n' +
+          `🌠 Nombre astral: *${user.regName || 'Sin nombre'}*`
       }, { quoted: msg })
     }
 
@@ -22,7 +22,7 @@ export default {
       return sock.sendMessage(from, {
         text:
           '🧭 *USO CORRECTO*\n\n' +
-          'Usa: *.register TuNombre*'
+          'Escribe: *.register TuNombreAstral*'
       }, { quoted: msg })
     }
 
@@ -33,10 +33,10 @@ export default {
 
     await sock.sendMessage(from, {
       text:
-        '🌌 *REGISTRO COMPLETADO*\n\n' +
-        `Bienvenido a AstraBot, *${user.regName}*.\n` +
-        'Tu señal astral ya fue reconocida.\n\n' +
-        'Ahora ya puedes usar el bot.'
+        '🌌 *REGISTRO ASTRAL COMPLETADO*\n\n' +
+        `✨ Bienvenido a la constelacion de AstraBot, *${user.regName}*.\n` +
+        '🛰️ Tu señal fue reconocida por el nucleo astral.\n\n' +
+        '🌠 Ya puedes usar los comandos del bot.'
     }, { quoted: msg })
   }
 }

@@ -1,29 +1,23 @@
+import { AstraText } from '../astramessages.js'
+
 export default {
   name: 'menu',
-  aliases: ['help', 'menú'],
-  description: 'Despliega el núcleo de comandos astrales',
+  aliases: ['help', 'menua'],
+  description: 'Despliega el nucleo de comandos astrales',
   category: 'main',
   cooldown: 3,
   async run({ sock, from, commands, config }) {
-    const categoryOrder = [
-      'main',
-      'info',
-      'group',
-      'moderation',
-      'media',
-      'fun',
-      'owner'
-    ]
+    const categoryOrder = ['main', 'info', 'group', 'moderation', 'media', 'fun', 'owner']
 
     const categoryMeta = {
-      main: { emoji: '🚀', title: 'NÚCLEO PRINCIPAL' },
-      info: { emoji: '🛰️', title: 'INFORMACIÓN ASTRAL' },
-      group: { emoji: '🌌', title: 'GESTIÓN DE ÓRBITA' },
-      moderation: { emoji: '🛡️', title: 'MODERACIÓN ESTELAR' },
-      media: { emoji: '🪐', title: 'MEDIA & RELIQUIAS' },
-      fun: { emoji: '🎮', title: 'DIVERSIÓN GALÁCTICA' },
-      owner: { emoji: '👑', title: 'NÚCLEO DE MANDO' },
-      otros: { emoji: '✨', title: 'OTROS MÓDULOS' }
+      main: { emoji: '🚀', title: 'NUCLEO PRINCIPAL' },
+      info: { emoji: '🛰️', title: 'INFORMACION ASTRAL' },
+      group: { emoji: '🌌', title: 'GESTION DE ORBITA' },
+      moderation: { emoji: '🛡️', title: 'MODERACION ESTELAR' },
+      media: { emoji: '🪐', title: 'MEDIA Y RELIQUIAS' },
+      fun: { emoji: '🎮', title: 'DIVERSIÓN GALACTICA' },
+      owner: { emoji: '👑', title: 'NUCLEO DE MANDO' },
+      otros: { emoji: '✨', title: 'OTROS MODULOS' }
     }
 
     const grouped = {}
@@ -39,26 +33,14 @@ export default {
       ...Object.keys(grouped).filter(cat => !categoryOrder.includes(cat))
     ]
 
-    const lines = [
-      '╔════════════════════╗',
-      '║      ✦ ASTRA BOT ✦      ║',
-      '╚════════════════════╝',
-      '',
-      `🌠 *Bot:* ${config.botName}`,
-      `🧭 *Prefijo:* ${config.prefix}`,
-      `📦 *Módulos cargados:* ${commands.length}`,
-      '🛰️ *Estado:* señal astral estable',
-      '',
-      '━━━━━━━━━━━━━━━━━━'
-    ]
+    const lines = [...AstraText.menuIntro(config.botName, config.prefix, commands.length)]
 
     for (const cat of sortedCategories) {
       const meta = categoryMeta[cat] || categoryMeta.otros
-      lines.push('')
-      lines.push(`${meta.emoji} *${meta.title}*`)
-      lines.push('──────────────────')
-
       const cmds = grouped[cat].sort((a, b) => a.name.localeCompare(b.name))
+
+      lines.push(`${meta.emoji} *${meta.title}*`)
+      lines.push('────────────────────')
 
       for (const c of cmds) {
         const flags = [
@@ -68,14 +50,15 @@ export default {
           c.privateOnly ? '📩' : null
         ].filter(Boolean).join(' ')
 
-        const flagText = flags ? ` ${flags}` : ''
-        lines.push(`✧ *${config.prefix}${c.name}* — ${c.description || 'sin descripción'}${flagText}`)
+        lines.push(
+          `✦ *${config.prefix}${c.name}* - ${c.description || 'sin descripcion'}${flags ? ` ${flags}` : ''}`
+        )
       }
+
+      lines.push('')
     }
 
-    lines.push('')
-    lines.push('━━━━━━━━━━━━━━━━━━')
-    lines.push('🌙 *AstraBot domina la órbita.*')
+    lines.push('🌙 *AstraBot domina la orbita.*')
 
     await sock.sendMessage(from, {
       text: lines.join('\n')

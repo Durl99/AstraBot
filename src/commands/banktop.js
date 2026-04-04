@@ -1,3 +1,4 @@
+import { AstraText } from '../astramessages.js'
 import { ensureUser } from '../store.js'
 
 export default {
@@ -11,7 +12,7 @@ export default {
 
     if (!users.length) {
       return sock.sendMessage(from, {
-        text: '🌌 No hay suficientes registros para formar un banktop.'
+        text: AstraText.banktopEmpty
       })
     }
 
@@ -27,13 +28,15 @@ export default {
       .slice(0, 10)
 
     const lines = [
-      '🏦 BANKTOP ORBITAL',
+      AstraText.banktopTitle,
       '',
-      ...ranking.map((u, i) => ${i + 1}. @${u.jid.split('@')[0]} — *${u.bank}* coins)
+      ...ranking.map(
+        (u, i) => `${i + 1}. @${u.jid.split('@')[0]}\n🏦 Banco: *${u.bank}* coins`
+      )
     ]
 
     await sock.sendMessage(from, {
-      text: lines.join('\n'),
+      text: lines.join('\n\n'),
       mentions: ranking.map(v => v.jid)
     })
   }

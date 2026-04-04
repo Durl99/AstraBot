@@ -53,8 +53,8 @@ export function ensureGroup(db, jid) {
     db.groups[jid] = {
       antilink: false,
       welcome: false,
-      welcomeText: '👋 Bienvenido @user a *@group*',
-      byeText: '🌙 @user abandonó la órbita de *@group*',
+      welcomeText: '🌠 Bienvenido @user a la orbita de *@group*.',
+      byeText: '🌙 @user abandono la orbita de *@group*.',
       muted: false,
       antiFlood: false
     }
@@ -64,8 +64,8 @@ export function ensureGroup(db, jid) {
   if (typeof db.groups[jid].welcome !== 'boolean') db.groups[jid].welcome = false
   if (typeof db.groups[jid].muted !== 'boolean') db.groups[jid].muted = false
   if (typeof db.groups[jid].antiFlood !== 'boolean') db.groups[jid].antiFlood = false
-  if (!db.groups[jid].welcomeText) db.groups[jid].welcomeText = '👋 Bienvenido @user a *@group*'
-  if (!db.groups[jid].byeText) db.groups[jid].byeText = '🌙 @user abandonó la órbita de *@group*'
+  if (!db.groups[jid].welcomeText) db.groups[jid].welcomeText = '🌠 Bienvenido @user a la orbita de *@group*.'
+  if (!db.groups[jid].byeText) db.groups[jid].byeText = '🌙 @user abandono la orbita de *@group*.'
 
   return db.groups[jid]
 }
