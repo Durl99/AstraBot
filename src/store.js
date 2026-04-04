@@ -60,6 +60,7 @@ export function ensureGroup(db, jid) {
       welcomeText: DEFAULT_WELCOME_TEXT,
       bye: false,
       byeText: DEFAULT_BYE_TEXT,
+      boss: null,
       muted: false,
       antiFlood: false
     }
@@ -70,6 +71,7 @@ export function ensureGroup(db, jid) {
   if (typeof db.groups[jid].antidelete !== 'boolean') db.groups[jid].antidelete = false
   if (typeof db.groups[jid].welcome !== 'boolean') db.groups[jid].welcome = false
   if (typeof db.groups[jid].bye !== 'boolean') db.groups[jid].bye = false
+  if (!('boss' in db.groups[jid])) db.groups[jid].boss = null
   if (typeof db.groups[jid].muted !== 'boolean') db.groups[jid].muted = false
   if (typeof db.groups[jid].antiFlood !== 'boolean') db.groups[jid].antiFlood = false
   if (!db.groups[jid].welcomeText) db.groups[jid].welcomeText = DEFAULT_WELCOME_TEXT
