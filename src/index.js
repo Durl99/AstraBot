@@ -19,6 +19,7 @@ const logger = pino({ level: 'silent' })
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const HOST = process.env.HOST || '0.0.0.0'
 
 let latestQR = null
 let qrImageDataUrl = null
@@ -259,8 +260,8 @@ app.get('/health', (req, res) => {
   })
 })
 
-app.listen(PORT, () => {
-  console.log(`🌐 Web temporal activa en puerto ${PORT} | instancia=${config.instanceName} | host=${process.env.HOSTNAME || process.env.COMPUTERNAME || 'desconocido'} | pid=${process.pid}`)
+app.listen(PORT, HOST, () => {
+  console.log(`Web temporal activa en ${HOST}:${PORT} | instancia=${config.instanceName} | host=${process.env.HOSTNAME || process.env.COMPUTERNAME || 'desconocido'} | pid=${process.pid}`)
 })
 
 async function startBot() {
@@ -412,3 +413,5 @@ startBot().catch(err => {
   console.error('Error iniciando AstraBot:', err)
   scheduleReconnect(5000)
 })
+
+
