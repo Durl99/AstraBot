@@ -65,6 +65,7 @@ export function ensureGroup(db, jid) {
       antilink: false,
       antilinkMode: 'kick',
       antidelete: false,
+      markov: null,
       welcome: false,
       welcomeText: DEFAULT_WELCOME_TEXT,
       bye: false,
@@ -78,6 +79,7 @@ export function ensureGroup(db, jid) {
   if (typeof db.groups[jid].antilink !== 'boolean') db.groups[jid].antilink = false
   if (!['kick', 'warn'].includes(db.groups[jid].antilinkMode)) db.groups[jid].antilinkMode = 'kick'
   if (typeof db.groups[jid].antidelete !== 'boolean') db.groups[jid].antidelete = false
+  if (!db.groups[jid].markov || typeof db.groups[jid].markov !== 'object') db.groups[jid].markov = { enabled: false, interval: 10, pending: 0, lastGeneratedAt: 0, corpus: [] }
   if (typeof db.groups[jid].welcome !== 'boolean') db.groups[jid].welcome = false
   if (typeof db.groups[jid].bye !== 'boolean') db.groups[jid].bye = false
   if (!('boss' in db.groups[jid])) db.groups[jid].boss = null
@@ -147,3 +149,4 @@ export function ensureUser(db, userId) {
 
   return user
 }
+
