@@ -1,3 +1,4 @@
+import { config } from '../config.js'
 import { ensureGroup, saveDB } from '../store.js'
 import { getTextMessage } from '../utils.js'
 import {
@@ -125,7 +126,7 @@ export default {
     }, { quoted: msg })
   },
 
-  async onMessage({ sock, msg, from, db, isOwner, isAdmin, config }) {
+  async onMessage({ sock, msg, from, db }) {
     if (!from?.endsWith('@g.us')) return
     if (msg.key?.fromMe) return
 
@@ -149,3 +150,4 @@ export default {
     }
   }
 }
+
