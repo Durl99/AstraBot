@@ -1,39 +1,47 @@
 export const SHOP_ITEMS = {
   apple: {
     key: 'apple',
-    emoji: '🍎',
-    name: 'Manzana Cósmica',
+    emoji: '\u{1F34E}',
+    name: 'Manzana Cosmica',
     price: 40,
-    description: 'Te da un pequeño boost de XP.',
+    description: 'Te da un pequeno boost de XP.',
     usable: true
   },
   potion: {
     key: 'potion',
-    emoji: '🧪',
-    name: 'Poción Astral',
+    emoji: '\u{1F9EA}',
+    name: 'Pocion Astral',
     price: 120,
     description: 'Te da bastante XP.',
     usable: true
   },
   crate: {
     key: 'crate',
-    emoji: '📦',
-    name: 'Caja Galáctica',
+    emoji: '\u{1F4E6}',
+    name: 'Caja Galactica',
     price: 180,
     description: 'Puede darte coins extra al abrirla.',
     usable: true
   },
   crystal: {
     key: 'crystal',
-    emoji: '🔮',
+    emoji: '\u{1F52E}',
     name: 'Cristal Nebular',
     price: 300,
     description: 'Otorga coins y XP.',
     usable: true
   },
+  petfood: {
+    key: 'petfood',
+    emoji: '\u{1F355}',
+    name: 'Snack Estelar',
+    price: 90,
+    description: 'Alimento premium para companions astrales.',
+    usable: false
+  },
   ring: {
     key: 'ring',
-    emoji: '💍',
+    emoji: '\u{1F48D}',
     name: 'Anillo Estelar',
     price: 500,
     description: 'Item de lujo para presumir en tu inventario.',
@@ -41,7 +49,7 @@ export const SHOP_ITEMS = {
   },
   crown: {
     key: 'crown',
-    emoji: '👑',
+    emoji: '\u{1F451}',
     name: 'Corona Solar',
     price: 900,
     description: 'Puro ego astral. No se usa, se presume.',

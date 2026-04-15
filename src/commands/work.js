@@ -1,5 +1,12 @@
 import { ensureUser, saveDB } from '../store.js'
 import { recordProgressAction } from '../progression.js'
+import { getPetPassives } from '../pets.js'
+
+const HOURGLASS = '\u231B'
+const TOOLS = '\u{1F6E0}\uFE0F'
+const PAW = '\u{1F43E}'
+const GALAXY = '\u{1F30C}'
+const TROPHY = '\u{1F3C6}'
 
 function formatTime(ms) {
   const s = Math.ceil(ms / 1000)
@@ -36,25 +43,31 @@ export default {
 
     if (left > 0) {
       return sock.sendMessage(from, {
-        text: `⌛ *TRABAJO EN RECARGA*\n\nDebes esperar *${formatTime(left)}* para volver a trabajar.`
+        text: `${HOURGLASS} *TRABAJO EN RECARGA*\n\nDebes esperar *${formatTime(left)}* para volver a trabajar.`
       }, { quoted: msg })
     }
 
     const amount = Math.floor(Math.random() * 151) + 80
     const job = jobs[Math.floor(Math.random() * jobs.length)]
+    const petPassive = getPetPassives(user)
+    const petBonus = petPassive.active ? Math.max(0, Math.floor(amount * petPassive.economyMultiplier)) : 0
 
-    user.coins += amount
+    user.coins += amount + petBonus
     user.lastWork = now
     const unlocked = recordProgressAction(user, 'work')
     saveDB(db)
 
     await sock.sendMessage(from, {
-      text: `🛠️ *TRABAJO COMPLETADO*\n\nTrabajaste como *${job}* y ganaste *${amount}* coins.\n🌌 AstraBot registro tu jornada orbital.`
+      text:
+        `${TOOLS} *TRABAJO COMPLETADO*\n\n` +
+        `Trabajaste como *${job}* y ganaste *${amount}* coins.\n` +
+        `${petBonus > 0 ? `${PAW} Tu companion encontro *${petBonus}* coins extra en la orbita.\n` : ''}` +
+        `${GALAXY} AstraBot registro tu jornada orbital.`
     }, { quoted: msg })
 
     if (unlocked.length) {
       await sock.sendMessage(from, {
-        text: unlocked.map(a => `🏆 Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
+        text: unlocked.map(a => `${TROPHY} Logro desbloqueado: *${a.title}* (+${a.reward} coins)`).join('\n')
       }, { quoted: msg })
     }
   }

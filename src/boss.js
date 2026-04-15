@@ -1,5 +1,6 @@
 import { addItem } from './economy.js'
 import { getClan } from './clans.js'
+import { getPetPassives } from './pets.js'
 import { ensureGroup, ensureUser, saveDB } from './store.js'
 
 const BOSSES = [
@@ -59,6 +60,7 @@ export function attackBoss(db, groupId, sender) {
     lastAttack: 0,
     clanId: user.clanId || null
   }
+  const petPassive = getPetPassives(user)
 
   const cooldownMs = 45 * 1000
   const left = participant.lastAttack + cooldownMs - now
@@ -66,7 +68,9 @@ export function attackBoss(db, groupId, sender) {
     return { error: 'Tu arsenal astral aun esta recargando.', left }
   }
 
-  const damage = randomBetween(boss.minAtk, boss.maxAtk)
+  const baseDamage = randomBetween(boss.minAtk, boss.maxAtk)
+  const petBonus = petPassive.active ? petPassive.bossBonus : 0
+  const damage = baseDamage + petBonus
   boss.hp = Math.max(0, boss.hp - damage)
   participant.lastAttack = now
   participant.damage += damage
@@ -78,6 +82,7 @@ export function attackBoss(db, groupId, sender) {
   const result = {
     boss,
     damage,
+    petBonus,
     defeated: boss.hp <= 0,
     participantDamage: participant.damage
   }

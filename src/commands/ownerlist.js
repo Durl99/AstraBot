@@ -3,7 +3,7 @@ import { AstraText } from '../astramessages.js'
 export default {
   name: 'ownerlist',
   aliases: ['owners'],
-  description: 'Lista el núcleo de mando',
+  description: 'Lista el nucleo de mando',
   category: 'owner',
   ownerOnly: true,
   cooldown: 3,
@@ -12,7 +12,7 @@ export default {
 
     let text = `${AstraText.ownerListTitle}\n\n`
     for (const owner of owners) {
-      text += `• ${owner}\n`
+      text += `- ${owner}\n`
     }
 
     await sock.sendMessage(from, { text })

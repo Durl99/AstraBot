@@ -119,6 +119,7 @@ export function ensureUser(db, userId) {
       missions: {},
       stats: {},
       clanId: null,
+      pet: null,
       inventory: {}
     }
   }
@@ -141,6 +142,7 @@ export function ensureUser(db, userId) {
   if (!user.missions || typeof user.missions !== 'object') user.missions = {}
   if (!user.stats || typeof user.stats !== 'object') user.stats = {}
   if (typeof user.clanId !== 'string' && user.clanId !== null) user.clanId = null
+  if (user.pet !== null && typeof user.pet !== 'object') user.pet = null
   if (!user.inventory || typeof user.inventory !== 'object') user.inventory = {}
 
   return user
