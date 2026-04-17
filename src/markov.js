@@ -1,4 +1,4 @@
-const DEFAULT_INTERVAL = 10
+﻿const DEFAULT_INTERVAL = 10
 const MIN_INTERVAL = 5
 const MAX_INTERVAL = 100
 const MAX_CORPUS = 250
@@ -89,8 +89,8 @@ function cleanMarkovInput(text = '', prefix = '.') {
     .replace(/\s+/g, ' ')
     .trim()
 
-  const wordCount = normalized.split(/\s+/).filter(Boolean).length
-  if (normalized.length < 12 || wordCount < 3) return ''
+  const words = tokenize(normalized)
+  if (!words.length) return ''
   return normalized.slice(0, 240)
 }
 
@@ -102,11 +102,13 @@ function splitSentences(text) {
 }
 
 function tokenize(sentence) {
-  return (sentence.match(/[\p{L}\p{N}'-]+/gu) || []).map(token => token.toLowerCase())
+  return (sentence.match(/[\p{L}\p{N}'-]+/gu) || [])
+    .map(token => token.toLowerCase())
+    .filter(token => token.length >= 2)
 }
 
 function extractKeywords(text) {
-  return tokenize(text).filter(word => word.length >= 4 && !STOPWORDS.has(word))
+  return tokenize(text).filter(word => !STOPWORDS.has(word))
 }
 
 function buildChain(corpus) {
@@ -116,9 +118,16 @@ function buildChain(corpus) {
   for (const text of corpus) {
     for (const sentence of splitSentences(text)) {
       const words = tokenize(sentence)
-      if (words.length < 3) continue
+      if (words.length < 2) continue
 
       starts.push(words.slice(0, 2))
+
+      if (words.length === 2) {
+        const lastKey = `${words[0]} ${words[1]}`
+        if (!transitions.has(lastKey)) transitions.set(lastKey, [])
+        transitions.get(lastKey).push(END)
+        continue
+      }
 
       for (let i = 0; i < words.length - 2; i++) {
         const key = `${words[i]} ${words[i + 1]}`
@@ -187,7 +196,7 @@ function generateMarkovText(corpus, sourceText = '') {
       pair = [pair[1], next]
     }
 
-    if (tokens.length < 5) continue
+    if (tokens.length < 2) continue
 
     const finalText = finalizeGeneratedText(tokens, sourceText)
     const lowered = finalText.toLowerCase()
@@ -249,4 +258,3 @@ export function generateMarkovPreview(group, seedText = '') {
   const markov = ensureMarkovState(group)
   return generateMarkovText(markov.corpus, seedText)
 }
-

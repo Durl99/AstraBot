@@ -1,6 +1,6 @@
-import { config } from '../config.js'
+﻿import { config } from '../config.js'
 import { ensureGroup, saveDB } from '../store.js'
-import { getTextMessage } from '../utils.js'
+import { getContextInfo, getTextMessage } from '../utils.js'
 import {
   ensureMarkovState,
   generateMarkovPreview,
@@ -21,6 +21,22 @@ const SPARKLES = '\u2728'
 
 function isAllowed(isOwner, isAdmin) {
   return Boolean(isOwner || isAdmin)
+}
+
+function jidUserPart(jid = '') {
+  return String(jid).split('@')[0].split(':')[0]
+}
+
+function isReplyingToBot(msg, sock) {
+  const ctx = getContextInfo(msg)
+  const quotedParticipant = ctx?.participant
+  if (!quotedParticipant) return false
+
+  const botCandidates = [sock.user?.id, sock.user?.lid, sock.user?.jid]
+    .filter(Boolean)
+    .map(jidUserPart)
+
+  return botCandidates.includes(jidUserPart(quotedParticipant))
 }
 
 export default {
@@ -60,7 +76,7 @@ export default {
       return sock.sendMessage(from, {
         text:
           `${SATELLITE} El nucleo Markov quedo *activo*.\n\n` +
-          `Aprendere del chat y hablare automaticamente cada *${markov.interval}* mensajes validos.`
+          `Aprendere del chat, aceptare palabras de 2 letras o mas y hablare automaticamente cada *${markov.interval}* mensajes validos.`
       }, { quoted: msg })
     }
 
@@ -134,20 +150,26 @@ export default {
     const body = getTextMessage(msg).trim()
     if (!body) return
 
+    const shouldReplyToBot = group.markov?.enabled && isReplyingToBot(msg, sock)
     const result = learnAndGenerateMarkov(group, body, config.prefix)
-    if (!result.changed) return
 
-    saveDB(db)
+    if (result.changed) {
+      saveDB(db)
+    }
 
-    if (!group.markov?.enabled || !result.generated) return
+    let generated = result.generated
+    if (!generated && shouldReplyToBot) {
+      generated = generateMarkovPreview(group, body)
+    }
+
+    if (!group.markov?.enabled || !generated) return
 
     try {
       await sock.sendMessage(from, {
-        text: result.generated
-      })
+        text: generated
+      }, { quoted: msg })
     } catch (error) {
       console.error('Error markov:', error)
     }
   }
 }
-
